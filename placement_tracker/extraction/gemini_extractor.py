@@ -87,7 +87,7 @@ Rules:
     "Internship" only → "Intern"
     If unclear → "N/A"
 - ctc: Extract CTC or Stipend. Convert INR figures to LPA (e.g., INR 1,00,000 = 1 LPA; INR 22,00,000 = "22 LPA"). For stipends, write "50K/month". If absent → "N/A"
-- status: Extract application status if available (e.g., "Registered" → "Applied", "Shortlisted", "Offered"). If not an applications page, set to "N/A".
+- status: Extract the application status. Look for explicit statuses like "Shortlisted", "Offered", "Interviewing", or "Rejected". If no explicit status is found, default to "Applied" (since these cards are scraped from the user's Applications tab). Do not use "N/A" for status unless absolutely necessary.
 - student_name: set to "dummy" (will be overwritten by the caller)
 - student_id: set to "dummy" (will be overwritten by the caller)
 - Never hallucinate. Use "N/A" for any missing field.
