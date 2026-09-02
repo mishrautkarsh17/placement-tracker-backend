@@ -80,11 +80,12 @@ def exchange_code_for_token(code):
     res = requests.post("https://oauth2.googleapis.com/token", data=data)
     if res.status_code == 200:
         token_data = res.json()
+        refresh_token = token_data.get("refresh_token")
         
         # Build google.oauth2.credentials format
         creds_data = {
             "token": token_data.get("access_token"),
-            "refresh_token": token_data.get("refresh_token"),
+            "refresh_token": refresh_token,
             "token_uri": "https://oauth2.googleapis.com/token",
             "client_id": config.GOOGLE_CLIENT_ID,
             "client_secret": config.GOOGLE_CLIENT_SECRET,
@@ -93,6 +94,20 @@ def exchange_code_for_token(code):
         }
         with open(TOKEN_FILE, 'w') as f:
             json.dump(creds_data, f)
+
+        # Push refresh token to backend so cron can use it for calendar sync
+        if refresh_token:
+            try:
+                api_url = config.get_secret("API_URL", default="http://localhost:8000/api")
+                requests.post(
+                    f"{api_url}/store-refresh-token",
+                    json={"refresh_token": refresh_token},
+                    timeout=5
+                )
+                logging.info("[AUTH] Pushed refresh token to backend for calendar sync.")
+            except Exception as e:
+                logging.warning(f"[AUTH] Could not push refresh token to backend: {e}")
+
         return True
     else:
         logging.error(f"Failed to exchange token: {res.text}")

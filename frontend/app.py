@@ -565,8 +565,30 @@ with tab3:
         st.altair_chart(role_chart, use_container_width=True)
         
     st.divider()
-    st.subheader("All Global Offers")
+    
+    # --- BRANCH VISUALIZATION ---
     df_offers = fetch_offers()
+    
+    if not df_offers.empty and "branch" in df_offers.columns:
+        st.subheader("Offers by Branch")
+        branch_counts = df_offers[df_offers["branch"] != ""]["branch"].value_counts().reset_index()
+        branch_counts.columns = ["Branch", "Number of Offers"]
+        
+        # Filter out N/A if desired
+        branch_counts = branch_counts[branch_counts["Branch"] != "N/A"]
+        
+        if not branch_counts.empty:
+            branch_chart = alt.Chart(branch_counts).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
+                x=alt.X("Branch:N", sort="-y", title="Branch"),
+                y=alt.Y("Number of Offers:Q", title="Total Offers"),
+                color=alt.Color("Branch:N", legend=None, scale=alt.Scale(scheme="tealblues")),
+                tooltip=["Branch", "Number of Offers"]
+            ).properties(height=350)
+            
+            st.altair_chart(branch_chart, use_container_width=True)
+            st.divider()
+            
+    st.subheader("All Global Offers")
     if df_offers.empty:
         st.info("No offers recorded yet.")
     else:

@@ -33,6 +33,7 @@ OFFERS_SHEET_TAB = get_secret("OFFERS_SHEET_TAB", default="Offers")
 MTECH_OFFERS_SHEET_TAB = get_secret("MTECH_OFFERS_SHEET_TAB", default="Mtech offers")
 PRIVATE_SHEET_ID = get_secret("PRIVATE_SHEET_ID", default="1PhkTax9UdjG7cv5vdsHbrn721YtnUnQvlUsfoEllwms")
 APPLICATIONS_SHEET_TAB = get_secret("APPLICATIONS_SHEET_TAB", default="application")
+STUDENTS_SHEET_TAB = get_secret("STUDENTS_SHEET_TAB", default="Btech students 23")
 
 POD_AI_URL = get_secret("POD_AI_URL", default="https://iiitd.pod.ai")
 POD_AI_USERNAME = get_secret("POD_AI_USERNAME")
