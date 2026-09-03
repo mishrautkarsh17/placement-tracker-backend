@@ -71,7 +71,7 @@ def sync_offer_letters() -> dict:
             if d_str and d_str != "N/A":
                 try:
                     d_obj = datetime.strptime(d_str, "%Y-%m-%d %H:%M:%S")
-                    if d_obj > last_processed_time:
+                    if d_obj.date() >= last_processed_time.date():
                         recent_emails.append(e)
                 except ValueError:
                     # If date parsing fails, keep it just in case
