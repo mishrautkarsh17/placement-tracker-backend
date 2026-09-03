@@ -271,6 +271,9 @@ def read_offers() -> pd.DataFrame:
     df = pd.DataFrame(records)
     if not df.empty:
         df = df.astype(str)
+        # Keep only the core headers, dropping any extra formula columns the user added to the sheet
+        valid_cols = [col for col in OFFERS_HEADERS if col in df.columns]
+        df = df[valid_cols]
     return df
 
 def get_cohort_stats() -> dict[str, int]:
