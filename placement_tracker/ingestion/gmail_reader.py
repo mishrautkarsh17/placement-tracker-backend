@@ -36,7 +36,7 @@ def fetch_recent_offers(since_date_str: str) -> list[dict]:
     try:
         mail = imaplib.IMAP4_SSL("imap.gmail.com")
         mail.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-        mail.select("inbox")
+        mail.select('"[Gmail]/All Mail"')
         
         try:
             # Search for emails from the placement cell since the given date
@@ -114,7 +114,7 @@ def fetch_historical_offers(subject_keyword: str) -> list[dict]:
     try:
         mail = imaplib.IMAP4_SSL("imap.gmail.com")
         mail.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-        mail.select("inbox")
+        mail.select('"[Gmail]/All Mail"')
         
         # Search for emails from the placement cell matching the subject
         search_criteria = f'(FROM "placement@iiitd.ac.in" SUBJECT "{subject_keyword}")'
@@ -185,7 +185,7 @@ def fetch_shortlisted_students(since_date_str: str) -> list[dict]:
     try:
         mail = imaplib.IMAP4_SSL("imap.gmail.com")
         mail.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-        mail.select("inbox")
+        mail.select('"[Gmail]/All Mail"')
 
         search_criteria = f'(FROM "placement@iiitd.ac.in" SINCE "{since_date_str}")'
         status, messages = mail.search(None, search_criteria)

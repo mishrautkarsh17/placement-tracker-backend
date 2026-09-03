@@ -284,25 +284,81 @@ def get_daily_brief(student_id: str):
     }
     
     prompt = """
-    Generate a concise daily placement briefing for the student.
+    You are an AI Placement Copilot. Your job is to analyze the student's calendar and applications.
     
-    Format exactly like this (use markdown):
+    1. Find the SINGLE most immediate upcoming event (Test or Interview) in the next 7 days. This MUST be the "next_action".
+    2. Generate a "study_plan" and "checklist" of 4-5 tasks specifically tailored to prepare for this exact event and company.
     
-    ### 🎯 Today's Placement Summary
-    - [Key event 1]
-    - [Key event 2]
+    Output strictly as a JSON object with no markdown wrappers, matching this exact structure:
+    {
+        "next_action": {
+            "company": "[Company Name]",
+            "title": "[e.g. Test 1 or HR Interview]",
+            "time_location": "[e.g. 7:00 PM • Any Location]",
+            "countdown": "[e.g. 05h : 32m left, or 2 Days left]",
+            "tag": "[e.g. TODAY, TOMORROW, UPCOMING]"
+        },
+        "progress": {
+            "completed": 0,
+            "total": 5,
+            "percentage": 0,
+            "checklist": [
+                {"task": "[Specific prep task for the company]", "done": false},
+                {"task": "[Specific prep task]", "done": false},
+                {"task": "[Specific prep task]", "done": false}
+            ]
+        },
+        "study_plan": {
+            "focus": "[e.g. DSA + Aptitude]",
+            "recommended_time": "[e.g. 2h 30m of focused study]",
+            "next_topic": "[e.g. Arrays & Hashing]"
+        },
+        "things_to_carry": ["Photo ID", "Pens", "Resume"]
+    }
     
-    ### 📚 Suggested Preparation
-    - [Topic 1]: [Brief reason why, referencing upcoming events and company historical data]
-    - [Topic 2]: [Brief reason why]
-    
-    ### 🚦 Priority
-    [High/Medium/Low]
+    Ensure the JSON is completely valid. If no events are upcoming, provide a generic interview prep plan.
     """
     
-    brief = generate_copilot_response(prompt, context)
-    data_cache.set(cache_key, brief)
-    return {"brief": brief}
+    raw_brief = generate_copilot_response(prompt, context)
+    
+    # Try to parse the JSON
+    import json
+    try:
+        # Strip potential markdown code blocks
+        clean_json = raw_brief.strip()
+        if clean_json.startswith("```json"):
+            clean_json = clean_json[7:]
+        if clean_json.startswith("```"):
+            clean_json = clean_json[3:]
+        if clean_json.endswith("```"):
+            clean_json = clean_json[:-3]
+            
+        structured_brief = json.loads(clean_json.strip())
+    except Exception as e:
+        logging.error(f"Failed to parse daily brief JSON: {e}")
+        # Fallback dummy data if parsing fails
+        if upcoming_events:
+            next_ev = upcoming_events[0]
+            comp = next((v for k, v in next_ev.items() if "company" in str(k).lower()), "Upcoming Company")
+            date = next((v for k, v in next_ev.items() if "date" in str(k).lower()), "Upcoming")
+            title = next((v for k, v in next_ev.items() if "event" in str(k).lower() or "title" in str(k).lower()), "Selection Process")
+            
+            structured_brief = {
+                "next_action": {"company": str(comp), "title": str(title), "time_location": str(date), "countdown": "Upcoming", "tag": "UPCOMING"},
+                "progress": {"completed": 0, "total": 3, "percentage": 0, "checklist": [{"task": f"Research {comp}", "done": False}, {"task": "Review Job Description", "done": False}, {"task": "Practice Core Topics", "done": False}]},
+                "study_plan": {"focus": f"Prep for {comp}", "recommended_time": "2 hours daily", "next_topic": "Past Interview Experiences"},
+                "things_to_carry": ["Laptop", "Notebook", "Pen"]
+            }
+        else:
+            structured_brief = {
+                "next_action": {"company": "Placement Prep", "title": "Self Study", "time_location": "Anytime", "countdown": "Continuous", "tag": "ONGOING"},
+                "progress": {"completed": 1, "total": 4, "percentage": 25, "checklist": [{"task": "Check Portal", "done": True}, {"task": "Practice DSA", "done": False}, {"task": "Aptitude", "done": False}, {"task": "Mock Interview", "done": False}]},
+                "study_plan": {"focus": "General Prep", "recommended_time": "2 hours daily", "next_topic": "Data Structures"},
+                "things_to_carry": ["Laptop", "Notebook", "Water"]
+            }
+
+    data_cache.set(cache_key, structured_brief)
+    return {"brief": structured_brief}
 
 @router.get("/company/{company_name}")
 def get_company_info(company_name: str):

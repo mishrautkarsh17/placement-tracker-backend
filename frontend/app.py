@@ -64,23 +64,21 @@ def fetch_applications(roll_no):
 
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="AI Placement Tracker", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="AI Placement Tracker", page_icon="", layout="wide")
 
 # --- CUSTOM CSS ---
 st.markdown("""
 <style>
-    /* Premium Modern Font */
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    /* Premium Minimalist Font */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     
     html, body, [class*="css"] {
-        font-family: 'Outfit', sans-serif;
+        font-family: 'Inter', sans-serif;
     }
     
     /* Background & Main App */
     .stApp {
-        background-color: #0f1115; /* Sleek dark background */
-        background-image: radial-gradient(circle at top right, rgba(78, 205, 196, 0.05), transparent 40%),
-                          radial-gradient(circle at bottom left, rgba(255, 107, 107, 0.05), transparent 40%);
+        background-color: #09090b; /* Solid zinc-950 */
     }
 
     /* Clean up the top padding and header */
@@ -89,80 +87,51 @@ st.markdown("""
         max-width: 1200px;
     }
     
-    /* Premium Metric Cards with Glassmorphism */
+    /* Clean Solid Metric Cards */
     [data-testid="stMetric"] {
-        background: rgba(30, 30, 47, 0.6);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border-radius: 16px;
+        background: #18181b; /* Solid zinc-900 */
+        border-radius: 8px;
         padding: 1.5rem;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        position: relative;
-        overflow: hidden;
+        border: 1px solid #27272a; /* Solid zinc-800 */
+        transition: border-color 0.2s ease;
     }
     [data-testid="stMetric"]:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
-        border: 1px solid rgba(78, 205, 196, 0.3);
+        border-color: #3f3f46;
     }
-    /* Shine effect on hover */
-    [data-testid="stMetric"]::before {
-        content: '';
-        position: absolute;
-        top: 0; left: -100%;
-        width: 50%; height: 100%;
-        background: linear-gradient(to right, transparent, rgba(255,255,255,0.03), transparent);
-        transform: skewX(-20deg);
-        transition: 0.5s;
-    }
-    [data-testid="stMetric"]:hover::before {
-        left: 150%;
-    }
+
     [data-testid="stMetricLabel"] {
-        color: #a0a0b8 !important;
+        color: #a1a1aa !important;
         font-weight: 500 !important;
         font-size: 0.95rem !important;
     }
     [data-testid="stMetricValue"] {
-        color: #fff !important;
-        font-weight: 700 !important;
-        font-size: 2.2rem !important;
-        background: -webkit-linear-gradient(45deg, #4ECDC4, #556270);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #fafafa !important;
+        font-weight: 600 !important;
+        font-size: 2rem !important;
     }
     
-    /* Elegant Primary Buttons */
+    /* Clean Primary Buttons */
     .stButton > button {
-        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-        color: white;
+        background: #fafafa;
+        color: #09090b;
         border: none;
-        border-radius: 12px;
+        border-radius: 6px;
         padding: 0.5rem 1.5rem;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
-        transition: all 0.3s ease;
+        font-weight: 500;
+        transition: background 0.2s ease;
     }
     .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
-        color: white;
-        border: none;
-    }
-    .stButton > button:active {
-        transform: translateY(1px);
+        background: #e4e4e7;
+        color: #09090b;
     }
     
     /* Expander Styling */
     .streamlit-expanderHeader {
-        background: rgba(30, 30, 47, 0.6) !important;
-        border-radius: 12px !important;
-        font-weight: 600;
-        border: 1px solid rgba(255, 255, 255, 0.05) !important;
-        backdrop-filter: blur(10px);
+        background: #18181b !important;
+        border-radius: 8px !important;
+        font-weight: 500;
+        border: 1px solid #27272a !important;
+        color: #fafafa !important;
     }
     [data-testid="stExpander"] {
         border: none !important;
@@ -171,82 +140,66 @@ st.markdown("""
     
     /* Modern Chat Interface */
     [data-testid="stChatMessage"] {
-        background: rgba(26, 26, 36, 0.8);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
+        background: #18181b;
+        border-radius: 8px;
         padding: 1.2rem;
-        margin-bottom: 1.2rem;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        animation: slideUp 0.3s ease-out forwards;
+        margin-bottom: 1rem;
+        border: 1px solid #27272a;
     }
     /* Distinguish Assistant vs User */
     [data-testid="stChatMessage"]:nth-child(even) {
-        border-left: 3px solid #6366f1;
+        border-left: 3px solid #fafafa;
     }
     [data-testid="stChatMessage"]:nth-child(odd) {
-        border-left: 3px solid #4ECDC4;
+        border-left: 3px solid #71717a;
     }
     
     /* Chat Input Box */
     [data-testid="stChatInput"] {
-        border-radius: 20px !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        background: rgba(30, 30, 47, 0.8) !important;
+        border-radius: 8px !important;
+        border: 1px solid #27272a !important;
+        background: #18181b !important;
     }
     [data-testid="stChatInput"]:focus-within {
-        border-color: #6366f1 !important;
-        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+        border-color: #fafafa !important;
     }
     
     /* Tabs Styling */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         background-color: transparent;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid #27272a;
     }
     .stTabs [data-baseweb="tab"] {
         background-color: transparent;
-        border-radius: 8px 8px 0 0;
         padding-top: 1rem;
         padding-bottom: 1rem;
         font-weight: 500;
-        color: #a0a0b8;
+        color: #a1a1aa;
     }
     .stTabs [aria-selected="true"] {
-        color: #fff;
-        border-bottom: 2px solid #6366f1;
+        color: #fafafa;
+        border-bottom: 2px solid #fafafa;
     }
     
     /* Dataframe styling */
     [data-testid="stDataFrame"] {
-        border-radius: 12px;
+        border-radius: 8px;
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        border: 1px solid #27272a;
     }
     
     /* Headers Typography */
     h1, h2, h3 {
-        color: #f8fafc;
+        color: #fafafa;
+        font-weight: 600;
         letter-spacing: -0.02em;
-    }
-    h1 {
-        font-weight: 700;
-        background: linear-gradient(135deg, #fff 0%, #a0a0b8 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
     }
     
     /* Sidebar */
     [data-testid="stSidebar"] {
-        background-color: rgba(15, 17, 21, 0.98);
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    
-    /* Slide up animation */
-    @keyframes slideUp {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
+        background-color: #09090b;
+        border-right: 1px solid #27272a;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -254,7 +207,7 @@ st.markdown("""
 
 # --- USER PROFILE ---
 if 'roll_no' not in st.session_state or 'name' not in st.session_state:
-    st.title("🎓 Welcome to Placement Tracker")
+    st.title(" Welcome to Placement Tracker")
     st.write("Please authenticate with your IIITD Google account to securely load your dashboard.")
 
     # Check for OAuth callback code in URL
@@ -269,7 +222,7 @@ if 'roll_no' not in st.session_state or 'name' not in st.session_state:
     # Check if we have a cached token
     creds = get_user_credentials()
     if creds and creds.valid:
-        # Fetch profile to show WHO is cached — don't auto-login silently
+        # Fetch profile to show WHO is cached  don't auto-login silently
         profile = get_user_profile()
         if profile:
             cached_email = profile.get("email", "")
@@ -278,17 +231,17 @@ if 'roll_no' not in st.session_state or 'name' not in st.session_state:
             # Only auto-accept if it's an IIITD account
             is_iiitd = cached_email.endswith("@iiitd.ac.in")
 
-            st.success(f"✅ Google account detected: **{cached_name}** ({cached_email})")
+            st.success(f" Google account detected: **{cached_name}** ({cached_email})")
 
             col_confirm, col_switch = st.columns(2)
             with col_confirm:
-                if st.button("✅ Continue as this account", use_container_width=True, type="primary"):
+                if st.button(" Continue as this account", use_container_width=True, type="primary"):
                     roll_no = "".join(filter(str.isdigit, cached_email))
                     st.session_state['name'] = cached_name
                     st.session_state['roll_no'] = roll_no
                     st.rerun()
             with col_switch:
-                if st.button("🔄 Switch Account", use_container_width=True):
+                if st.button(" Switch Account", use_container_width=True):
                     # Delete the cached token so next login goes through Google account chooser
                     import os
                     if os.path.exists("user_token.json"):
@@ -300,22 +253,10 @@ if 'roll_no' not in st.session_state or 'name' not in st.session_state:
             if os.path.exists("user_token.json"):
                 os.remove("user_token.json")
     else:
-        # No cached credentials — show the Google login button
+        # No cached credentials  show the Google login button
 
         st.link_button("Login with Google", get_oauth_url(), type="primary")
 
-    st.write("---")
-    st.write("If Google login fails, you can manually enter your details below (for testing only):")
-    with st.form("profile_form"):
-        name_input = st.text_input("Full Name")
-        roll_input = st.text_input("Roll Number")
-        if st.form_submit_button("Enter Dashboard Manually"):
-            if name_input and roll_input:
-                st.session_state['name'] = name_input
-                st.session_state['roll_no'] = roll_input
-                st.rerun()
-            else:
-                st.error("Both fields are required.")
     st.stop()
 
 name = st.session_state['name']
@@ -326,7 +267,7 @@ roll_no = st.session_state['roll_no']
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.title("🎓 Placement Tracker")
+    st.title(" Placement Tracker")
     st.markdown(f"**Name:** {name}")
     st.markdown(f"**Roll No:** {roll_no}")
     st.divider()
@@ -338,15 +279,15 @@ with st.sidebar:
         st.rerun()
 
 # --- MAIN APP ---
-tab1, tab2, tab3, tab4 = st.tabs(["🤖 Copilot", "📅 Calendar", "📊 Analytics", "🏢 Company Hub & Applications"])
+tab1, tab2, tab3, tab4 = st.tabs([" Copilot", " Calendar", " Analytics", " Company Hub & Applications"])
 
 with tab1:
-    st.header("🤖 AI Placement Copilot")
+    st.header(" AI Placement Copilot")
     
-    with st.expander("📝 Your Daily Placement Brief", expanded=True):
+    with st.expander(" Your Daily Placement Brief", expanded=True):
         brief = fetch_daily_brief(roll_no)
         if "I'm having trouble" in brief or "Rate Limit" in brief:
-            st.error(f"⚠️ **AI Unavailable:** {brief}")
+            st.error(f" **AI Unavailable:** {brief}")
         else:
             st.markdown(brief)
                 
@@ -380,7 +321,7 @@ with tab1:
                     except Exception as e:
                         reply = f"Error connecting to backend: {e}"
             if "I'm having trouble" in reply or "Rate Limit" in reply:
-                st.error(f"⚠️ **AI Unavailable:** {reply}")
+                st.error(f" **AI Unavailable:** {reply}")
             else:
                 st.markdown(reply)
             st.session_state.messages.append({"role": "assistant", "content": reply})
@@ -390,12 +331,12 @@ with tab1:
     st.divider()
 
     # --- AI RESUME MATCHER ---
-    with st.expander("📄 AI Resume Matcher — Find Your Best Company Fits", expanded=False):
+    with st.expander(" AI Resume Matcher  Find Your Best Company Fits", expanded=False):
         st.markdown("Upload your resume and the AI will analyse it against companies currently recruiting on campus.")
         uploaded_resume = st.file_uploader("Upload Resume (PDF only)", type=["pdf"], key="resume_uploader")
         if uploaded_resume:
-            if st.button("🔍 Find My Best Matches", use_container_width=True):
-                with st.spinner("Analysing your resume against active companies... ⏳"):
+            if st.button(" Find My Best Matches", use_container_width=True):
+                with st.spinner("Analysing your resume against active companies... "):
                     try:
                         res = requests.post(
                             f"{API_URL}/recommend-companies",
@@ -412,7 +353,7 @@ with tab1:
         if "resume_recommendation" in st.session_state:
             rec = st.session_state["resume_recommendation"]
             if "I'm having trouble" in rec or "Rate Limit" in rec:
-                st.error(f"⚠️ **AI Unavailable:** {rec}")
+                st.error(f" **AI Unavailable:** {rec}")
             else:
                 st.markdown(rec)
 
@@ -423,7 +364,7 @@ with tab2:
     with col_c:
         st.write("Official schedule for upcoming PPTs, Tests, and Interviews.")
     with col_d:
-        if st.button("🔄 Sync Calendar", use_container_width=True):
+        if st.button(" Sync Calendar", use_container_width=True):
             with st.spinner("Syncing calendar (Check browser if login needed)..."):
                 try:
                     req = requests.post(f"{API_URL}/sync-calendar")
@@ -446,11 +387,11 @@ with tab2:
         # Strip whitespace from column names (sheet has trailing spaces like 'Date ', 'Company ')
         df_cal.columns = df_cal.columns.str.strip()
         
-        filter_my_apps = st.checkbox("🎯 Show only companies I've applied to / am eligible for", value=True)
+        filter_my_apps = st.checkbox(" Show only companies I've applied to / am eligible for", value=True)
         
         if filter_my_apps:
             if df_apps.empty:
-                st.info("⚠️ You haven't synced your applications yet. Showing the full calendar. Head to the **Company Hub** tab to sync your data!")
+                st.info(" You haven't synced your applications yet. Showing the full calendar. Head to the **Company Hub** tab to sync your data!")
             elif 'Company' in df_cal.columns and 'company_name' in df_apps.columns:
                 import re
                 def normalize(name):
@@ -471,7 +412,7 @@ with tab2:
                 df_cal = df_cal[mask]
 
         if df_cal.empty:
-            st.success("No scheduled events found for your applied companies. 🎉")
+            st.success("No scheduled events found for your applied companies. ")
         else:
             # Today's Highlights
             st.subheader("Today's Events")
@@ -493,7 +434,7 @@ with tab2:
                 today_events = df_cal[df_cal['parsed_date'] == today_dt]
                 if not today_events.empty:
                     for _, row in today_events.iterrows():
-                        st.error(f"🚨 **{row.get('Company', 'Unknown')}** - {row.get('Process', '')} at {row.get('Test Start Time', '')} / {row.get('PPT Start Time', '')}")
+                        st.error(f" **{row.get('Company', 'Unknown')}** - {row.get('Process', '')} at {row.get('Test Start Time', '')} / {row.get('PPT Start Time', '')}")
                 else:
                     st.success("No events scheduled for today.")
             
@@ -511,12 +452,12 @@ with tab3:
     
     col_btn1, col_btn2 = st.columns(2)
     with col_btn1:
-        if st.button("🔄 Sync Global Offers & CTC", use_container_width=True, type="primary"):
+        if st.button(" Sync Global Offers & CTC", use_container_width=True, type="primary"):
             with st.spinner("Step 1/2: Syncing offers from emails..."):
                 try:
                     req = requests.post(f"{API_URL}/sync-email-offers")
                     if req.status_code == 200:
-                        st.success("✅ Emails synced successfully!")
+                        st.success(" Emails synced successfully!")
                     else:
                         st.error(f"Email sync failed: {req.text}")
                 except Exception as e:
@@ -526,7 +467,7 @@ with tab3:
                 try:
                     ctc_req = requests.post(f"{API_URL}/sync-ctc-enrichment")
                     if ctc_req.status_code == 200:
-                        st.success("✅ CTC Enrichment has started in the background! (This process takes a few minutes. Check back later to see the updated CTCs).")
+                        st.success(" CTC Enrichment has started in the background! (This process takes a few minutes. Check back later to see the updated CTCs).")
                         st.cache_data.clear()
                     else:
                         st.error(f"CTC sync failed to start: {ctc_req.text}")
@@ -534,7 +475,7 @@ with tab3:
                     st.error(f"CTC sync failed: {e}")
                     
     with col_btn2:
-        if st.button("🗑️ Clear Sheet Data & Reset Cron", use_container_width=True):
+        if st.button(" Clear Sheet Data & Reset Cron", use_container_width=True):
             with st.spinner("Clearing sheets and resetting cron to 1st July..."):
                 try:
                     req = requests.post(f"{API_URL}/clear-offers")
@@ -562,7 +503,7 @@ with tab3:
         st.metric("RECRUITING COMPANIES", f"{overall.get('companies_hiring', 0)} firms", f"Top Branch: {overall.get('top_branch', 'N/A')}", delta_color="off")
         
     if branch_data:
-        with st.expander("📊 Branch Comparison: Total Students vs Placed Students", expanded=True):
+        with st.expander(" Branch Comparison: Total Students vs Placed Students", expanded=True):
             st.caption("Paired side-by-side bars for every branch.")
             
             df_branch = pd.DataFrame(branch_data)
@@ -582,6 +523,7 @@ with tab3:
             
         with st.expander("Detailed Branch Performance Summary", expanded=True):
             st.caption("Total student cohort versus placed count, offers tally, and placement percentages")
+            df_branch = df_branch.drop(columns=['intern_only'], errors='ignore')
             
             st.dataframe(
                 df_branch,
@@ -590,7 +532,6 @@ with tab3:
                     "full_name": "Full Program Name",
                     "total_students": st.column_config.NumberColumn("Total Students", format="%d"),
                     "placed_students": st.column_config.NumberColumn("Placed Students", format="%d"),
-                    "intern_only": st.column_config.NumberColumn("Intern Only", format="%d"),
                     "offers_count": st.column_config.NumberColumn("Offers Count", format="%d"),
                     "firms": st.column_config.NumberColumn("Firms", format="%d"),
                     "placement_rate": st.column_config.ProgressColumn(
@@ -613,7 +554,7 @@ with tab3:
             st.info("No raw offers data available.")
 
 with tab4:
-    st.header("🏢 Company Hub & Applications")
+    st.header(" Company Hub & Applications")
 
     # Company Knowledge Base Search
     st.subheader("Company Insights")
@@ -649,7 +590,7 @@ with tab4:
         else:
             st.caption("No applications found in cache.")
     with col2:
-        if st.button("🔄 Sync pod.ai Data", use_container_width=True):
+        if st.button(" Sync pod.ai Data", use_container_width=True):
             if POD_AI_USERNAME and POD_AI_PASSWORD:
                 with st.spinner("Scraping pod.ai... This may take a minute."):
                     try:
@@ -708,16 +649,16 @@ with tab4:
     else:
         # --- STATUS BADGE HELPER ---
         STATUS_COLORS = {
-            "Interviewing": ("#6366f1", "🎯"),
-            "Offered":      ("#22c55e", "🎉"),
-            "Shortlisted":  ("#f59e0b", "⭐"),
-            "Applied":      ("#3b82f6", "📝"),
-            "Rejected":     ("#ef4444", "✖️"),
-            "N/A":          ("#6b7280", "❓"),
+            "Interviewing": ("#6366f1", ""),
+            "Offered":      ("#22c55e", ""),
+            "Shortlisted":  ("#f59e0b", ""),
+            "Applied":      ("#3b82f6", ""),
+            "Rejected":     ("#ef4444", ""),
+            "N/A":          ("#6b7280", ""),
         }
 
         def render_status_badge(status):
-            color, icon = STATUS_COLORS.get(status, ("#6b7280", "❓"))
+            color, icon = STATUS_COLORS.get(status, ("#6b7280", ""))
             return f'<span style="background:{color}22; color:{color}; border:1px solid {color}66; padding:3px 10px; border-radius:99px; font-size:0.8rem; font-weight:600">{icon} {status}</span>'
 
         def render_app_card(row):
@@ -728,7 +669,7 @@ with tab4:
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <div style="font-size:1.1rem; font-weight:700; color:#f8fafc;">{row.get('company_name', 'Unknown')}</div>
-                        <div style="color:#a0a0b8; font-size:0.9rem; margin-top:2px;">{row.get('offer_type', 'N/A')} &nbsp;•&nbsp; CTC: <b style='color:#4ECDC4'>{row.get('ctc', 'N/A')}</b></div>
+                        <div style="color:#a0a0b8; font-size:0.9rem; margin-top:2px;">{row.get('offer_type', 'N/A')} &nbsp;&nbsp; CTC: <b style='color:#4ECDC4'>{row.get('ctc', 'N/A')}</b></div>
                     </div>
                     <div>{badge}</div>
                 </div>
@@ -749,9 +690,9 @@ with tab4:
         df_applied = df_apps[~mask_eligible & ~mask_ineligible]
 
         f_tab1, f_tab2, f_tab3 = st.tabs([
-            f"📝 Applied ({len(df_applied)})",
-            f"✅ Eligible ({len(df_eligible)})",
-            f"❌ Not Eligible ({len(df_ineligible)})",
+            f" Applied ({len(df_applied)})",
+            f" Eligible ({len(df_eligible)})",
+            f" Not Eligible ({len(df_ineligible)})",
         ])
 
         with f_tab1:

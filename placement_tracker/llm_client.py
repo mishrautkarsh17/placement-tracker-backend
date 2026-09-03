@@ -6,7 +6,7 @@ from google.genai import types
 
 # Per-key cooldown tracking: {key_index: cooldown_expiry_timestamp}
 _key_cooldowns: dict[int, float] = {}
-KEY_COOLDOWN_SECONDS = 600  # 10 minutes
+KEY_COOLDOWN_SECONDS = 30  # 30 seconds
 
 def _load_api_keys() -> list[str]:
     """Load and parse Gemini API keys from env/secrets. Called once at module load."""
