@@ -288,7 +288,7 @@ def _get_student_branches() -> dict[str, str]:
         # Dynamically find the header row
         for i, row in enumerate(all_values):
             clean_row = [str(c).strip().lower() for c in row]
-            if any(h in clean_row for h in ["roll number", "rollno", "roll_no", "student_id"]):
+            if any(h in clean_row for h in ["roll number", "rollno", "roll_no", "student_id", "roll no."]):
                 header_idx = i
                 break
                 
@@ -300,9 +300,9 @@ def _get_student_branches() -> dict[str, str]:
         # Find column indices
         roll_idx, branch_idx = -1, -1
         for i, h in enumerate(headers):
-            if h in ["roll number", "rollno", "roll_no", "student_id"]:
+            if h in ["roll number", "rollno", "roll_no", "student_id", "roll no."]:
                 roll_idx = i
-            elif "branch" in h or "department" in h:
+            elif "branch" in h or "department" in h or "program" in h:
                 branch_idx = i
                 
         if roll_idx == -1 or branch_idx == -1:
