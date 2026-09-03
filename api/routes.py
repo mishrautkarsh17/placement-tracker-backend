@@ -112,89 +112,51 @@ def get_analytics():
                 },
                 "branch_data": []
             }
-            
-        total_students_all = sum(cohort_stats.values()) if cohort_stats else 0
+        # Fetch the pre-calculated stats directly from the sheet
+        sheet_analytics = sheets_client.get_branch_analytics()
+        overall = sheet_analytics.get("overall", {})
+        branch_data = sheet_analytics.get("branch_data", [])
         
-        # Placed logic (ignoring pure 'Intern' for placed student count, usually FT/Intern+FT/PPO count)
-        df_offers['is_placed'] = df_offers['offer_type'].str.lower().isin(['fte', 'ppo', 'intern+ft'])
-        
-        # Branch-level stats
-        branch_data = []
-        
-        # Normalize the branch column to uppercase and stripped so it matches cohort_stats keys
+        # Merge in the metrics that aren't in the sheet
         if 'branch' in df_offers.columns:
             df_offers['branch_norm'] = df_offers['branch'].astype(str).str.strip().str.upper()
         else:
             df_offers['branch_norm'] = "N/A"
             
-        unique_branches = df_offers['branch_norm'].unique()
-        
-        # Add branches from cohort_stats even if no offers
-        for b in cohort_stats.keys():
-            b_up = b.strip().upper()
-            if b_up not in unique_branches:
-                unique_branches = list(unique_branches) + [b_up]
-                
-        for branch in unique_branches:
-            if not branch or branch == "N/A" or branch == "NAN": continue
-            b_offers = df_offers[df_offers['branch_norm'] == branch]
+        full_names = {
+            "EVE": "Electronics & VLSI Engineering",
+            "CSAI": "CS & Artificial Intelligence",
+            "CSB": "CS & Biosciences",
+            "CSE": "Computer Science & Engineering",
+            "ECE": "Electronics & Communication",
+            "CSSS": "CS & Social Sciences",
+            "CSD": "CS & Design",
+            "CSAM": "CS & Applied Mathematics"
+        }
             
-            b_total_students = cohort_stats.get(branch, 0)
+        for b_dict in branch_data:
+            b_name = b_dict['branch'].upper()
+            b_offers = df_offers[df_offers['branch_norm'] == b_name]
             
-            # Count unique placed students
-            b_placed_students = b_offers[b_offers['is_placed']]['student_id'].nunique() if not b_offers.empty else 0
-            
-            # Count offers
-            b_offers_count = len(b_offers)
-            b_intern_only = len(b_offers[b_offers['offer_type'].str.lower() == 'intern'])
-            b_firms = b_offers['company_name'].nunique() if not b_offers.empty else 0
-            
-            # Placement rate
-            b_placement_rate = (b_placed_students / b_total_students * 100) if b_total_students > 0 else 0
-            
-            # Map name
-            full_names = {
-                "EVE": "Electronics & VLSI Engineering",
-                "CSAI": "CS & Artificial Intelligence",
-                "CSB": "CS & Biosciences",
-                "CSE": "Computer Science & Engineering",
-                "ECE": "Electronics & Communication",
-                "CSSS": "CS & Social Sciences",
-                "CSD": "CS & Design",
-                "CSAM": "CS & Applied Mathematics"
-            }
-            
-            branch_data.append({
-                "branch": branch,
-                "full_name": full_names.get(branch, branch),
-                "total_students": b_total_students,
-                "placed_students": b_placed_students,
-                "intern_only": b_intern_only,
-                "offers_count": b_offers_count,
-                "firms": b_firms,
-                "placement_rate": round(b_placement_rate, 1)
-            })
+            b_dict['offers_count'] = len(b_offers)
+            b_dict['intern_only'] = len(b_offers[b_offers['offer_type'].str.lower() == 'intern']) if 'offer_type' in b_offers.columns else 0
+            b_dict['firms'] = b_offers['company_name'].nunique() if not b_offers.empty and 'company_name' in b_offers.columns else 0
+            b_dict['full_name'] = full_names.get(b_name, b_dict['branch'])
             
         # Sort branch data
-        branch_data.sort(key=lambda x: x['placement_rate'], reverse=True)
+        branch_data.sort(key=lambda x: x.get('placement_rate', 0), reverse=True)
         
-        # Overall stats
-        overall_placed = df_offers[df_offers['is_placed']]['student_id'].nunique()
-        overall_placement_rate = (overall_placed / total_students_all * 100) if total_students_all > 0 else 0
+        # Overall stats completion
+        overall["total_offers"] = len(df_offers)
+        overall["companies_hiring"] = int(df_offers["company_name"].nunique()) if "company_name" in df_offers.columns else 0
         
         top_branch_str = "N/A"
         if branch_data:
             top_branch_str = f"{branch_data[0]['branch']} ({branch_data[0]['placement_rate']}%)"
+        overall["top_branch"] = top_branch_str
             
         result = {
-            "overall": {
-                "total_offers": len(df_offers),
-                "companies_hiring": int(df_offers["company_name"].nunique()) if "company_name" in df_offers.columns else 0,
-                "total_students": total_students_all,
-                "placed_students": overall_placed,
-                "placement_rate": round(overall_placement_rate, 1),
-                "top_branch": top_branch_str
-            },
+            "overall": overall,
             "branch_data": branch_data
         }
         
@@ -245,32 +207,52 @@ def _get_filtered_upcoming_events(cal_data, app_data):
     import pandas as pd
     def norm(name): return re.sub(r'[^a-z0-9]', '', str(name).lower())
     
+    my_companies = set()
     ineligible_companies = set()
+    
     for app in app_data:
+        c_name = norm(app.get("company_name", ""))
+        if not c_name or len(c_name) < 2:
+            continue
         status = str(app.get("status", "")).strip().lower()
         if "not eligible" in status or "not-eligible" in status:
-            ineligible_companies.add(norm(app.get("company_name", "")))
+            ineligible_companies.add(c_name)
+        else:
+            my_companies.add(c_name)
 
     upcoming_events = []
     date_col = next((k for k in cal_data[0].keys() if "date" in str(k).lower()), None)
     comp_col = next((k for k in cal_data[0].keys() if "company" in str(k).lower()), None)
     
-    if date_col:
-        today = pd.Timestamp.now().normalize()
-        for row in cal_data:
-            comp_name = norm(row.get(comp_col, "")) if comp_col else ""
-            if comp_name and comp_name in ineligible_companies:
+    today = pd.Timestamp.now().normalize()
+    
+    for row in cal_data:
+        comp_name = norm(row.get(comp_col, "")) if comp_col else ""
+        
+        # If user has synced apps, ONLY show companies they've applied to/are eligible for
+        if app_data and comp_name:
+            is_match = False
+            for mc in my_companies:
+                if mc in comp_name or comp_name in mc:
+                    is_match = True
+                    break
+            if not is_match or comp_name in ineligible_companies:
                 continue
                 
+        # Skip purely ineligible if app_data was somehow empty but we had ineligible
+        if comp_name and comp_name in ineligible_companies:
+            continue
+            
+        if date_col:
             try:
                 event_date = pd.to_datetime(row.get(date_col, ""), dayfirst=True)
                 if event_date >= today:
                     upcoming_events.append(row)
             except Exception:
                 upcoming_events.append(row)
-    else:
-        upcoming_events = [r for r in cal_data if (norm(r.get(comp_col, "")) not in ineligible_companies if comp_col else True)]
-        
+        else:
+            upcoming_events.append(row)
+            
     return upcoming_events
 
 @router.get("/daily-brief/{student_id}")

@@ -338,7 +338,7 @@ with st.sidebar:
         st.rerun()
 
 # --- MAIN APP ---
-tab1, tab2, tab3, tab4 = st.tabs(["🤖 Copilot", "📅 Dashboard", "📊 Analytics", "🏢 Company Hub & Applications"])
+tab1, tab2, tab3, tab4 = st.tabs(["🤖 Copilot", "📅 Calendar", "📊 Analytics", "🏢 Company Hub & Applications"])
 
 with tab1:
     st.header("🤖 AI Placement Copilot")
@@ -423,7 +423,7 @@ with tab2:
     with col_c:
         st.write("Official schedule for upcoming PPTs, Tests, and Interviews.")
     with col_d:
-        if st.button("🔄 Sync College Calendar", use_container_width=True):
+        if st.button("🔄 Sync Calendar", use_container_width=True):
             with st.spinner("Syncing calendar (Check browser if login needed)..."):
                 try:
                     req = requests.post(f"{API_URL}/sync-calendar")
@@ -550,64 +550,67 @@ with tab3:
     overall = analytics_data.get("overall", {})
     branch_data = analytics_data.get("branch_data", [])
     
-    st.markdown("### Overall Metrics")
-    m1, m2 = st.columns(2)
-    m1.metric("TOTAL STUDENTS", overall.get("total_students", 0), "Across all branches", delta_color="off")
-    m2.metric("PLACED STUDENTS", overall.get("placed_students", 0), "Full-time / PPO / Intern+FT", delta_color="off")
-    
-    m3, m4 = st.columns(2)
-    m3.metric("PLACEMENT RATE", f"{overall.get('placement_rate', 0)}%", delta_color="off")
-    m4.metric("TOTAL OFFERS", overall.get("total_offers", 0), "Total job & internship offers", delta_color="off")
-    
-    st.metric("RECRUITING COMPANIES", f"{overall.get('companies_hiring', 0)} firms", f"Top Branch: {overall.get('top_branch', 'N/A')}", delta_color="off")
-    
-    st.divider()
-    
+    with st.expander("Overall Metrics", expanded=True):
+        m1, m2 = st.columns(2)
+        m1.metric("TOTAL STUDENTS", overall.get("total_students", 0))
+        m2.metric("PLACED STUDENTS", overall.get("placed_students", 0))
+        
+        m3, m4 = st.columns(2)
+        m3.metric("PLACEMENT RATE", f"{overall.get('placement_rate', 0)}%")
+        m4.metric("TOTAL OFFERS", overall.get("total_offers", 0))
+        
+        st.metric("RECRUITING COMPANIES", f"{overall.get('companies_hiring', 0)} firms", f"Top Branch: {overall.get('top_branch', 'N/A')}", delta_color="off")
+        
     if branch_data:
-        st.markdown("### 📊 Branch Comparison: Total Students vs Placed Students")
-        st.caption("Paired side-by-side bars for every branch.")
-        
-        df_branch = pd.DataFrame(branch_data)
-        
-        df_melt = df_branch.melt(id_vars=["branch"], value_vars=["total_students", "placed_students"], var_name="Type", value_name="Count")
-        df_melt["Type"] = df_melt["Type"].map({"total_students": "Total Students", "placed_students": "Placed Students"})
-        
-        chart = alt.Chart(df_melt).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
-            x=alt.X("Type:N", title=None, axis=alt.Axis(labels=False, ticks=False)),
-            y=alt.Y("Count:Q", title="Count (Students)"),
-            color=alt.Color("Type:N", title="", scale=alt.Scale(domain=["Total Students", "Placed Students"], range=["#6366f1", "#10b981"])),
-            column=alt.Column("branch:N", title=None, header=alt.Header(labelOrient="bottom", labelFontSize=12, labelFontWeight="bold")),
-            tooltip=["branch", "Type", "Count"]
-        ).properties(width=80, height=350).configure_view(stroke="transparent")
-        
-        st.altair_chart(chart, use_container_width=False)
-        
-        st.divider()
-        
-        st.markdown("### Detailed Branch Performance Summary")
-        st.caption("Total student cohort versus placed count, offers tally, and placement percentages")
-        
-        st.dataframe(
-            df_branch,
-            column_config={
-                "branch": "Branch",
-                "full_name": "Full Program Name",
-                "total_students": st.column_config.NumberColumn("Total Students", format="%d"),
-                "placed_students": st.column_config.NumberColumn("Placed Students", format="%d"),
-                "intern_only": st.column_config.NumberColumn("Intern Only", format="%d"),
-                "offers_count": st.column_config.NumberColumn("Offers Count", format="%d"),
-                "firms": st.column_config.NumberColumn("Firms", format="%d"),
-                "placement_rate": st.column_config.ProgressColumn(
-                    "Placement Rate",
-                    help="Percentage of placed students",
-                    format="%.1f%%",
-                    min_value=0,
-                    max_value=100,
-                ),
-            },
-            hide_index=True,
-            use_container_width=True
-        )
+        with st.expander("📊 Branch Comparison: Total Students vs Placed Students", expanded=True):
+            st.caption("Paired side-by-side bars for every branch.")
+            
+            df_branch = pd.DataFrame(branch_data)
+            
+            df_melt = df_branch.melt(id_vars=["branch"], value_vars=["total_students", "placed_students"], var_name="Type", value_name="Count")
+            df_melt["Type"] = df_melt["Type"].map({"total_students": "Total Students", "placed_students": "Placed Students"})
+            
+            chart = alt.Chart(df_melt).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
+                x=alt.X("Type:N", title=None, axis=alt.Axis(labels=False, ticks=False)),
+                y=alt.Y("Count:Q", title="Count (Students)"),
+                color=alt.Color("Type:N", title="", scale=alt.Scale(domain=["Total Students", "Placed Students"], range=["#6366f1", "#10b981"])),
+                column=alt.Column("branch:N", title=None, header=alt.Header(labelOrient="bottom", labelFontSize=12, labelFontWeight="bold")),
+                tooltip=["branch", "Type", "Count"]
+            ).properties(width=80, height=350).configure_view(stroke="transparent")
+            
+            st.altair_chart(chart, use_container_width=False)
+            
+        with st.expander("Detailed Branch Performance Summary", expanded=True):
+            st.caption("Total student cohort versus placed count, offers tally, and placement percentages")
+            
+            st.dataframe(
+                df_branch,
+                column_config={
+                    "branch": "Branch",
+                    "full_name": "Full Program Name",
+                    "total_students": st.column_config.NumberColumn("Total Students", format="%d"),
+                    "placed_students": st.column_config.NumberColumn("Placed Students", format="%d"),
+                    "intern_only": st.column_config.NumberColumn("Intern Only", format="%d"),
+                    "offers_count": st.column_config.NumberColumn("Offers Count", format="%d"),
+                    "firms": st.column_config.NumberColumn("Firms", format="%d"),
+                    "placement_rate": st.column_config.ProgressColumn(
+                        "Placement Rate",
+                        help="Percentage of placed students",
+                        format="%.1f%%",
+                        min_value=0,
+                        max_value=100,
+                    ),
+                },
+                hide_index=True,
+                use_container_width=True
+            )
+            
+    with st.expander("Raw Offers Data", expanded=False):
+        df_raw_offers = fetch_offers()
+        if not df_raw_offers.empty:
+            st.dataframe(df_raw_offers, use_container_width=True)
+        else:
+            st.info("No raw offers data available.")
 
 with tab4:
     st.header("🏢 Company Hub & Applications")
@@ -636,6 +639,8 @@ with tab4:
 
     # Load cached personal applications from API
     df_apps = fetch_applications(roll_no)
+    if not df_apps.empty:
+        df_apps = df_apps.iloc[::-1]
 
     col1, col2 = st.columns([3, 1])
     with col1:

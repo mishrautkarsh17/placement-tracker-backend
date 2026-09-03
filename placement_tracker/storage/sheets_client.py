@@ -276,6 +276,74 @@ def read_offers() -> pd.DataFrame:
         df = df[valid_cols]
     return df
 
+def get_branch_analytics() -> dict:
+    """Reads the pre-calculated branch analytics table from the Offers sheet."""
+    worksheet = _get_worksheet(OFFERS_SHEET_TAB)
+    if not worksheet:
+        return {"overall": {}, "branch_data": []}
+    
+    try:
+        all_values = worksheet.get_all_values()
+        if not all_values or len(all_values) < 2:
+            return {"overall": {}, "branch_data": []}
+            
+        header_row = all_values[0]
+        # Find the Branch column for the analytics table (it's the 2nd Branch column)
+        branch_col_idx = -1
+        for i, val in enumerate(header_row):
+            if val.strip() == "Branch" and i > 5:
+                branch_col_idx = i
+                break
+                
+        if branch_col_idx == -1 or branch_col_idx + 3 >= len(header_row):
+            return {"overall": {}, "branch_data": []}
+            
+        branch_data = []
+        overall = {
+            "total_students": 0,
+            "placed_students": 0,
+            "placement_rate": 0.0,
+        }
+        
+        for row in all_values[1:]:
+            if len(row) <= branch_col_idx + 3:
+                continue
+                
+            b_name = str(row[branch_col_idx]).strip()
+            if not b_name:
+                continue
+                
+            try:
+                tot_stu = int(str(row[branch_col_idx + 1]).strip() or 0)
+                placed = int(str(row[branch_col_idx + 2]).strip() or 0)
+                rate_str = str(row[branch_col_idx + 3]).strip().replace('%', '')
+                rate = float(rate_str) if rate_str else 0.0
+            except ValueError:
+                continue
+                
+            if b_name.lower() == "total":
+                overall["total_students"] = tot_stu
+                overall["placed_students"] = placed
+                overall["placement_rate"] = rate
+                break
+            else:
+                branch_data.append({
+                    "branch": b_name,
+                    "full_name": b_name,
+                    "total_students": tot_stu,
+                    "placed_students": placed,
+                    "placement_rate": rate,
+                    "intern_only": 0,
+                    "offers_count": 0,
+                    "firms": 0
+                })
+                
+        return {"overall": overall, "branch_data": branch_data}
+        
+    except Exception as e:
+        logging.error(f"Error reading branch analytics table: {e}")
+        return {"overall": {}, "branch_data": []}
+
 def get_cohort_stats() -> dict[str, int]:
     """Reads the Students tab and returns a dictionary of branch -> total student count."""
     worksheet = _get_worksheet(STUDENTS_SHEET_TAB)
