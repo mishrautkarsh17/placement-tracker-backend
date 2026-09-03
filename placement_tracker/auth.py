@@ -124,7 +124,14 @@ def get_user_credentials():
         except Exception as e:
             logging.error(f"Failed to refresh token: {e}")
             creds = None
-
+            # If the token is revoked or invalid, delete the file to force a fresh login
+            if "invalid_grant" in str(e) and os.path.exists(TOKEN_FILE):
+                try:
+                    os.remove(TOKEN_FILE)
+                    logging.info("Deleted invalid user_token.json. User will need to re-authenticate.")
+                except Exception:
+                    pass
+    
     return creds
 
 def get_user_profile():
