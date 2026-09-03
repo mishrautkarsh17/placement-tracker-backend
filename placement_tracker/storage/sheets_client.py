@@ -273,53 +273,7 @@ def read_offers() -> pd.DataFrame:
         df = df.astype(str)
     return df
 
-def _get_student_branches() -> dict[str, str]:
-    """Reads the Students tab and returns a mapping of roll_number -> branch."""
-    worksheet = _get_worksheet(STUDENTS_SHEET_TAB)
-    if not worksheet:
-        return {}
-    
-    try:
-        all_values = worksheet.get_all_values()
-        if not all_values:
-            return {}
-            
-        header_idx = -1
-        # Dynamically find the header row
-        for i, row in enumerate(all_values):
-            clean_row = [str(c).strip().lower() for c in row]
-            if any(h in clean_row for h in ["roll number", "rollno", "roll_no", "student_id", "roll no."]):
-                header_idx = i
-                break
-                
-        if header_idx == -1 or len(all_values) <= header_idx + 1:
-            return {}
-            
-        headers = [str(h).strip().lower() for h in all_values[header_idx]]
-        
-        # Find column indices
-        roll_idx, branch_idx = -1, -1
-        for i, h in enumerate(headers):
-            if h in ["roll number", "rollno", "roll_no", "student_id", "roll no."]:
-                roll_idx = i
-            elif "branch" in h or "department" in h or "program" in h:
-                branch_idx = i
-                
-        if roll_idx == -1 or branch_idx == -1:
-            return {}
-            
-        branch_map = {}
-        for row in all_values[header_idx+1:]:
-            if len(row) > max(roll_idx, branch_idx):
-                roll = str(row[roll_idx]).strip().lower()
-                branch = str(row[branch_idx]).strip().upper()
-                if roll and branch:
-                    branch_map[roll] = branch
-                    
-        return branch_map
-    except Exception as e:
-        logging.error(f"Error reading student branches: {e}")
-        return {}
+
 
 def _upsert_offers_to_tab(records: list[PlacementRecord], tab_name: str):
     """Internal function to upsert records into a specific offers tab."""
@@ -344,19 +298,12 @@ def _upsert_offers_to_tab(records: list[PlacementRecord], tab_name: str):
             k = f"{sname}::{comp}"
         existing_map[k] = r
     
-    branch_map = _get_student_branches()
-    
     new_rows = []
     updates = []
     
     for record in records:
         key = record.dedup_key
-        row_data = record.to_sheet_row()[:5]  # Exclude status for Offers sheet
-        
-        # Append branch
-        sid = str(record.student_id).strip().lower()
-        branch = branch_map.get(sid, "N/A")
-        row_data.append(branch)
+        row_data = record.to_sheet_row()[:5]  # Exclude status for Offers sheet, let formula handle branch (col 6)
         
         if key in dedup_map:
             row_idx = dedup_map[key]
@@ -373,9 +320,6 @@ def _upsert_offers_to_tab(records: list[PlacementRecord], tab_name: str):
 
                 if row_data[4] in ("N/A", "") and existing.get("ctc", "") not in ("N/A", ""):
                     row_data[4] = existing.get("ctc", "")
-                    
-                if row_data[5] in ("N/A", "") and existing.get("branch", "") not in ("N/A", ""):
-                    row_data[5] = existing.get("branch", "")
             
             updates.append({
                 'range': f"A{row_idx}:{chr(65+len(row_data)-1)}{row_idx}",
@@ -509,42 +453,7 @@ def enrich_offers_with_ctc(applications: list[PlacementRecord]):
         app_records, _ = _get_all_applications()
         _apply_enrichment(app_ws, app_records)
 
-def enrich_offers_with_branch():
-    """Reads the Students tab and backfills the 'branch' column in the Offers sheets for existing records."""
-    branch_map = _get_student_branches()
-    if not branch_map:
-        return
-        
-    for tab_name in [OFFERS_SHEET_TAB, MTECH_OFFERS_SHEET_TAB]:
-        ws = _get_worksheet(tab_name)
-        if not ws:
-            continue
-            
-        records, dedup_map = _get_all_offers(tab_name)
-        if not records:
-            continue
-            
-        headers = ws.row_values(1)
-        updates = []
-        
-        for idx, row in enumerate(records):
-            row_idx = idx + 2
-            sid = str(row.get("student_id", "")).strip().lower()
-            current_branch = str(row.get("branch", ""))
-            
-            new_branch = branch_map.get(sid, "")
-            
-            if new_branch and new_branch != "N/A" and (current_branch == "N/A" or current_branch == ""):
-                row["branch"] = new_branch
-                row_data = [row.get(h, "") for h in headers]
-                updates.append({
-                    'range': f"A{row_idx}:{chr(65+len(headers)-1)}{row_idx}",
-                    'values': [row_data]
-                })
-                
-        if updates:
-            ws.batch_update(updates)
-            logging.info(f"Enriched {len(updates)} rows with Branch in {tab_name}")
+
 
 # --- APPLICATIONS DATA ---
 

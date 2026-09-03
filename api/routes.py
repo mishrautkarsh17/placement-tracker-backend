@@ -309,8 +309,6 @@ def sync_email_offers():
     from placement_tracker.pipeline import orchestrator
     try:
         res = orchestrator.sync_offer_letters()
-        # Also run branch enrichment for any newly added offers
-        sheets_client.enrich_offers_with_branch()
         data_cache.cache.clear()  # Invalidate cache so dashboard refreshes
         return res
     except Exception as e:
