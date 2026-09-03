@@ -128,6 +128,11 @@ def get_user_credentials():
         except Exception as e:
             logging.error(f"Failed to refresh token: {e}")
             creds = None
+            if "invalid_grant" in str(e) and os.path.exists(TOKEN_FILE):
+                try:
+                    os.remove(TOKEN_FILE)
+                except Exception:
+                    pass
             
     return creds
 

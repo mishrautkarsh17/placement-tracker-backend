@@ -432,6 +432,7 @@ with tab2:
                         st.error(res["error"])
                     else:
                         st.success(f"Successfully synced {res.get('rows', 0)} rows!")
+                        fetch_calendar.clear()
                         st.rerun()
                 except Exception as e:
                     st.error(f"Sync failed: {e}")

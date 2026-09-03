@@ -120,15 +120,24 @@ def get_analytics():
         
         # Branch-level stats
         branch_data = []
-        unique_branches = df_offers['branch'].unique()
+        
+        # Normalize the branch column to uppercase and stripped so it matches cohort_stats keys
+        if 'branch' in df_offers.columns:
+            df_offers['branch_norm'] = df_offers['branch'].astype(str).str.strip().str.upper()
+        else:
+            df_offers['branch_norm'] = "N/A"
+            
+        unique_branches = df_offers['branch_norm'].unique()
+        
         # Add branches from cohort_stats even if no offers
         for b in cohort_stats.keys():
-            if b not in unique_branches:
-                unique_branches = list(unique_branches) + [b]
+            b_up = b.strip().upper()
+            if b_up not in unique_branches:
+                unique_branches = list(unique_branches) + [b_up]
                 
         for branch in unique_branches:
-            if not branch or branch == "N/A": continue
-            b_offers = df_offers[df_offers['branch'] == branch]
+            if not branch or branch == "N/A" or branch == "NAN": continue
+            b_offers = df_offers[df_offers['branch_norm'] == branch]
             
             b_total_students = cohort_stats.get(branch, 0)
             
