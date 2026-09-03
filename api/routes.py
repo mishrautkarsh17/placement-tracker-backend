@@ -101,22 +101,92 @@ def get_analytics():
 
     try:
         df_offers = sheets_client.read_offers()
+        cohort_stats = sheets_client.get_cohort_stats()
         
+        # Base case
         if df_offers.empty:
-            return {"total_offers": 0, "companies_hiring": 0, "offers_by_role": {}}
-
-        total_offers = len(df_offers)
-        companies_hiring = int(df_offers["company_name"].nunique()) if "company_name" in df_offers.columns else 0
+            return {
+                "overall": {
+                    "total_offers": 0, "companies_hiring": 0, "total_students": sum(cohort_stats.values()),
+                    "placed_students": 0, "placement_rate": 0, "top_branch": "N/A"
+                },
+                "branch_data": []
+            }
+            
+        total_students_all = sum(cohort_stats.values()) if cohort_stats else 0
         
-        offers_by_role = {}
-        if "offer_type" in df_offers.columns:
-            counts = df_offers["offer_type"].value_counts().to_dict()
-            offers_by_role = {str(k): int(v) for k, v in counts.items()}
+        # Placed logic (ignoring pure 'Intern' for placed student count, usually FT/Intern+FT/PPO count)
+        df_offers['is_placed'] = df_offers['offer_type'].str.lower().isin(['fte', 'ppo', 'intern+ft'])
+        
+        # Branch-level stats
+        branch_data = []
+        unique_branches = df_offers['branch'].unique()
+        # Add branches from cohort_stats even if no offers
+        for b in cohort_stats.keys():
+            if b not in unique_branches:
+                unique_branches = list(unique_branches) + [b]
+                
+        for branch in unique_branches:
+            if not branch or branch == "N/A": continue
+            b_offers = df_offers[df_offers['branch'] == branch]
+            
+            b_total_students = cohort_stats.get(branch, 0)
+            
+            # Count unique placed students
+            b_placed_students = b_offers[b_offers['is_placed']]['student_id'].nunique() if not b_offers.empty else 0
+            
+            # Count offers
+            b_offers_count = len(b_offers)
+            b_intern_only = len(b_offers[b_offers['offer_type'].str.lower() == 'intern'])
+            b_firms = b_offers['company_name'].nunique() if not b_offers.empty else 0
+            
+            # Placement rate
+            b_placement_rate = (b_placed_students / b_total_students * 100) if b_total_students > 0 else 0
+            
+            # Map name
+            full_names = {
+                "EVE": "Electronics & VLSI Engineering",
+                "CSAI": "CS & Artificial Intelligence",
+                "CSB": "CS & Biosciences",
+                "CSE": "Computer Science & Engineering",
+                "ECE": "Electronics & Communication",
+                "CSSS": "CS & Social Sciences",
+                "CSD": "CS & Design",
+                "CSAM": "CS & Applied Mathematics"
+            }
+            
+            branch_data.append({
+                "branch": branch,
+                "full_name": full_names.get(branch, branch),
+                "total_students": b_total_students,
+                "placed_students": b_placed_students,
+                "intern_only": b_intern_only,
+                "offers_count": b_offers_count,
+                "firms": b_firms,
+                "placement_rate": round(b_placement_rate, 1)
+            })
+            
+        # Sort branch data
+        branch_data.sort(key=lambda x: x['placement_rate'], reverse=True)
+        
+        # Overall stats
+        overall_placed = df_offers[df_offers['is_placed']]['student_id'].nunique()
+        overall_placement_rate = (overall_placed / total_students_all * 100) if total_students_all > 0 else 0
+        
+        top_branch_str = "N/A"
+        if branch_data:
+            top_branch_str = f"{branch_data[0]['branch']} ({branch_data[0]['placement_rate']}%)"
             
         result = {
-            "total_offers": total_offers,
-            "companies_hiring": companies_hiring,
-            "offers_by_role": offers_by_role
+            "overall": {
+                "total_offers": len(df_offers),
+                "companies_hiring": int(df_offers["company_name"].nunique()) if "company_name" in df_offers.columns else 0,
+                "total_students": total_students_all,
+                "placed_students": overall_placed,
+                "placement_rate": round(overall_placement_rate, 1),
+                "top_branch": top_branch_str
+            },
+            "branch_data": branch_data
         }
         
         data_cache.set("analytics", result)

@@ -546,53 +546,67 @@ with tab3:
                     st.error(f"Failed to clear sheets: {e}")
                     
     analytics_data = fetch_analytics()
+    overall = analytics_data.get("overall", {})
+    branch_data = analytics_data.get("branch_data", [])
     
-    col1, col2 = st.columns(2)
-    col1.metric("Total Offers Issued", analytics_data.get("total_offers", 0))
-    col2.metric("Companies Hiring", analytics_data.get("companies_hiring", 0))
+    st.markdown("### Overall Metrics")
+    m1, m2 = st.columns(2)
+    m1.metric("TOTAL STUDENTS", overall.get("total_students", 0), "Across all branches", delta_color="off")
+    m2.metric("PLACED STUDENTS", overall.get("placed_students", 0), "Full-time / PPO / Intern+FT", delta_color="off")
+    
+    m3, m4 = st.columns(2)
+    m3.metric("PLACEMENT RATE", f"{overall.get('placement_rate', 0)}%", delta_color="off")
+    m4.metric("TOTAL OFFERS", overall.get("total_offers", 0), "Total job & internship offers", delta_color="off")
+    
+    st.metric("RECRUITING COMPANIES", f"{overall.get('companies_hiring', 0)} firms", f"Top Branch: {overall.get('top_branch', 'N/A')}", delta_color="off")
     
     st.divider()
     
-    offers_by_role = analytics_data.get("offers_by_role", {})
-    if offers_by_role:
-        st.subheader("Offer Types")
-        role_df = pd.DataFrame(list(offers_by_role.items()), columns=["offer_type", "count"])
-        role_chart = alt.Chart(role_df).mark_arc().encode(
-            theta="count",
-            color="offer_type",
-            tooltip=["offer_type", "count"]
-        ).properties(height=300)
-        st.altair_chart(role_chart, use_container_width=True)
+    if branch_data:
+        st.markdown("### 📊 Branch Comparison: Total Students vs Placed Students")
+        st.caption("Paired side-by-side bars for every branch.")
         
-    st.divider()
-    
-    # --- BRANCH VISUALIZATION ---
-    df_offers = fetch_offers()
-    
-    if not df_offers.empty and "branch" in df_offers.columns:
-        st.subheader("Offers by Branch")
-        branch_counts = df_offers[df_offers["branch"] != ""]["branch"].value_counts().reset_index()
-        branch_counts.columns = ["Branch", "Number of Offers"]
+        df_branch = pd.DataFrame(branch_data)
         
-        # Filter out N/A if desired
-        branch_counts = branch_counts[branch_counts["Branch"] != "N/A"]
+        df_melt = df_branch.melt(id_vars=["branch"], value_vars=["total_students", "placed_students"], var_name="Type", value_name="Count")
+        df_melt["Type"] = df_melt["Type"].map({"total_students": "Total Students", "placed_students": "Placed Students"})
         
-        if not branch_counts.empty:
-            branch_chart = alt.Chart(branch_counts).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
-                x=alt.X("Branch:N", sort="-y", title="Branch"),
-                y=alt.Y("Number of Offers:Q", title="Total Offers"),
-                color=alt.Color("Branch:N", legend=None, scale=alt.Scale(scheme="tealblues")),
-                tooltip=["Branch", "Number of Offers"]
-            ).properties(height=350)
-            
-            st.altair_chart(branch_chart, use_container_width=True)
-            st.divider()
-            
-    st.subheader("All Global Offers")
-    if df_offers.empty:
-        st.info("No offers recorded yet.")
-    else:
-        st.dataframe(df_offers, use_container_width=True)
+        chart = alt.Chart(df_melt).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
+            x=alt.X("Type:N", title=None, axis=alt.Axis(labels=False, ticks=False)),
+            y=alt.Y("Count:Q", title="Count (Students)"),
+            color=alt.Color("Type:N", title="", scale=alt.Scale(domain=["Total Students", "Placed Students"], range=["#6366f1", "#10b981"])),
+            column=alt.Column("branch:N", title=None, header=alt.Header(labelOrient="bottom", labelFontSize=12, labelFontWeight="bold")),
+            tooltip=["branch", "Type", "Count"]
+        ).properties(width=80, height=350).configure_view(stroke="transparent")
+        
+        st.altair_chart(chart, use_container_width=False)
+        
+        st.divider()
+        
+        st.markdown("### Detailed Branch Performance Summary")
+        st.caption("Total student cohort versus placed count, offers tally, and placement percentages")
+        
+        st.dataframe(
+            df_branch,
+            column_config={
+                "branch": "Branch",
+                "full_name": "Full Program Name",
+                "total_students": st.column_config.NumberColumn("Total Students", format="%d"),
+                "placed_students": st.column_config.NumberColumn("Placed Students", format="%d"),
+                "intern_only": st.column_config.NumberColumn("Intern Only", format="%d"),
+                "offers_count": st.column_config.NumberColumn("Offers Count", format="%d"),
+                "firms": st.column_config.NumberColumn("Firms", format="%d"),
+                "placement_rate": st.column_config.ProgressColumn(
+                    "Placement Rate",
+                    help="Percentage of placed students",
+                    format="%.1f%%",
+                    min_value=0,
+                    max_value=100,
+                ),
+            },
+            hide_index=True,
+            use_container_width=True
+        )
 
 with tab4:
     st.header("🏢 Company Hub & Applications")

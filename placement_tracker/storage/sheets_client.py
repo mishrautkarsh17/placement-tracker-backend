@@ -273,6 +273,48 @@ def read_offers() -> pd.DataFrame:
         df = df.astype(str)
     return df
 
+def get_cohort_stats() -> dict[str, int]:
+    """Reads the Students tab and returns a dictionary of branch -> total student count."""
+    worksheet = _get_worksheet(STUDENTS_SHEET_TAB)
+    if not worksheet:
+        return {}
+    
+    try:
+        all_values = worksheet.get_all_values()
+        if not all_values:
+            return {}
+            
+        header_idx = -1
+        for i, row in enumerate(all_values):
+            clean_row = [str(c).strip().lower() for c in row]
+            if any(h in clean_row for h in ["roll number", "rollno", "roll_no", "student_id", "roll no."]):
+                header_idx = i
+                break
+                
+        if header_idx == -1 or len(all_values) <= header_idx + 1:
+            return {}
+            
+        headers = [str(h).strip().lower() for h in all_values[header_idx]]
+        
+        branch_idx = -1
+        for i, h in enumerate(headers):
+            if "branch" in h or "department" in h or "program" in h:
+                branch_idx = i
+                
+        if branch_idx == -1:
+            return {}
+            
+        branch_counts = {}
+        for row in all_values[header_idx+1:]:
+            if len(row) > branch_idx:
+                branch = str(row[branch_idx]).strip().upper()
+                if branch and branch != "N/A":
+                    branch_counts[branch] = branch_counts.get(branch, 0) + 1
+                    
+        return branch_counts
+    except Exception as e:
+        logging.error(f"Error reading cohort stats: {e}")
+        return {}
 
 
 def _upsert_offers_to_tab(records: list[PlacementRecord], tab_name: str):
