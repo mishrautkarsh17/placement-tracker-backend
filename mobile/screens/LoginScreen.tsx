@@ -15,11 +15,9 @@ export default function LoginScreen() {
   const { login } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
   const [request, response, promptAsync] = Google.useAuthRequest({
-    iosClientId: '818439802211-h71rgar9kb1u33g46o3jmtq715nkr90u.apps.googleusercontent.com',
-    androidClientId: '818439802211-h71rgar9kb1u33g46o3jmtq715nkr90u.apps.googleusercontent.com',
+    androidClientId: '818439802211-t9p3bga590e50q9f807oshbpbn93rn0m.apps.googleusercontent.com',
     clientId: '818439802211-h71rgar9kb1u33g46o3jmtq715nkr90u.apps.googleusercontent.com',
     scopes: ['profile', 'email'],
-    redirectUri: AuthSession.makeRedirectUri({ native: 'com.placementtracker.app:/' }),
   });
 
   useEffect(() => {
