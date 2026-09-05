@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { apiClient } from '../api/client';
 import { AuthContext } from '../context/AuthContext';
 import { C, F, R, S, card } from '../components/theme';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 
 export default function CopilotScreen() {
   const [brief, setBrief] = useState<any>(null);
@@ -54,6 +54,12 @@ export default function CopilotScreen() {
   const completedCount = checklist.filter(i => i.done).length;
   const totalCount = checklist.length || 1;
   const percentage = Math.round((completedCount / totalCount) * 100);
+
+  const progressStyle = useAnimatedStyle(() => {
+    return {
+      width: withTiming(`${percentage}%`, { duration: 800, easing: Easing.out(Easing.cubic) }),
+    };
+  }, [percentage]);
 
   const firstName = user?.name?.split(' ')[0] || 'Utkarsh';
   const hour = new Date().getHours();
@@ -117,7 +123,7 @@ export default function CopilotScreen() {
               </View>
               {/* Horizontal Progress Bar */}
               <View style={{ height: 6, backgroundColor: C.goldMuted, borderRadius: 3, marginBottom: S.lg, overflow: 'hidden' }}>
-                <Animated.View style={{ height: '100%', backgroundColor: C.gold, borderRadius: 3, width: `${percentage}%` }} />
+                <Animated.View style={[{ height: '100%', backgroundColor: C.gold, borderRadius: 3 }, progressStyle]} />
               </View>
               <View style={{ gap: 12 }}>
                 {checklist.map((item: any, i: number) => (
