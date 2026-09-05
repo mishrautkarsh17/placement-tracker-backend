@@ -21,6 +21,11 @@ export default function AnalyticsScreen() {
   const [syncingCTC, setSyncingCTC] = useState(false);
   const [visibleOffersCount, setVisibleOffersCount] = useState(50);
 
+  // Collapse states
+  const [showBranch, setShowBranch] = useState(true);
+  const [showBatch, setShowBatch] = useState(false);
+  const [showOffers, setShowOffers] = useState(false);
+
   const fetch_ = async () => {
     try { 
       const [r, o] = await Promise.all([
@@ -121,14 +126,19 @@ export default function AnalyticsScreen() {
               {/* ── Branch Engagement (Dynamic) ── */}
               {data.branch_data && data.branch_data.length > 0 && (
                 <View style={s.cardLarge}>
-                  <View style={s.cardHeader}>
+                  <TouchableOpacity style={s.cardHeader} onPress={() => setShowBranch(!showBranch)} activeOpacity={0.7}>
                     <Text style={s.cardTitle}>Branch Engagement</Text>
-                    <View style={s.legend}>
-                      <View style={[s.legendDot, { backgroundColor: C.t1 }]} /><Text style={s.legendText}>Placed</Text>
-                      <View style={[s.legendDot, { backgroundColor: C.gold, marginLeft: 12 }]} /><Text style={s.legendText}>Total</Text>
+                    <View style={{flexDirection: 'row', alignItems: 'center', gap: S.md}}>
+                      {showBranch && (
+                        <View style={s.legend}>
+                          <View style={[s.legendDot, { backgroundColor: C.t1 }]} /><Text style={s.legendText}>Placed</Text>
+                          <View style={[s.legendDot, { backgroundColor: C.gold, marginLeft: 12 }]} /><Text style={s.legendText}>Total</Text>
+                        </View>
+                      )}
+                      <Ionicons name={showBranch ? "chevron-up" : "chevron-down"} size={20} color={C.t2} />
                     </View>
-                  </View>
-                  {data.branch_data.map((b: any, i: number) => {
+                  </TouchableOpacity>
+                  {showBranch && data.branch_data.map((b: any, i: number) => {
                     const max = Math.max(...data.branch_data.map((x:any) => x.total_students || 0), 1);
                     const tPct = b.total_students > 0 ? (b.total_students / max) * 100 : 0;
                     const pPct = b.total_students > 0 ? (b.placed_students / b.total_students) * 100 : 0;
@@ -156,19 +166,26 @@ export default function AnalyticsScreen() {
               {/* ── Batch-wise Data (Restored) ── */}
               {data.batch_data && data.batch_data.length > 0 && (
                 <View style={s.cardLarge}>
-                  <Text style={[s.cardTitle, { marginBottom: S.md }]}>Batch-wise Placement</Text>
-                  <View style={s.listHeader}>
-                    <Text style={[s.listH, {flex: 1}]}>Batch</Text>
-                    <Text style={[s.listH, {width: 60, textAlign: 'right'}]}>Firms</Text>
-                    <Text style={[s.listH, {width: 60, textAlign: 'right'}]}>Rate</Text>
-                  </View>
-                  {data.batch_data.map((b: any, i: number) => (
-                    <View key={i} style={s.listRow}>
-                      <Text style={s.listColMain}>{b.batch_year}</Text>
-                      <Text style={s.listColNum}>{b.firms_visited}</Text>
-                      <Text style={[s.listColNum, { fontFamily: F.m, color: C.green }]}>{b.placement_rate}%</Text>
-                    </View>
-                  ))}
+                  <TouchableOpacity style={s.cardHeader} onPress={() => setShowBatch(!showBatch)} activeOpacity={0.7}>
+                    <Text style={s.cardTitle}>Batch-wise Placement</Text>
+                    <Ionicons name={showBatch ? "chevron-up" : "chevron-down"} size={20} color={C.t2} />
+                  </TouchableOpacity>
+                  {showBatch && (
+                    <>
+                      <View style={s.listHeader}>
+                        <Text style={[s.listH, {flex: 1}]}>Batch</Text>
+                        <Text style={[s.listH, {width: 60, textAlign: 'right'}]}>Firms</Text>
+                        <Text style={[s.listH, {width: 60, textAlign: 'right'}]}>Rate</Text>
+                      </View>
+                      {data.batch_data.map((b: any, i: number) => (
+                        <View key={i} style={s.listRow}>
+                          <Text style={s.listColMain}>{b.batch_year}</Text>
+                          <Text style={s.listColNum}>{b.firms_visited}</Text>
+                          <Text style={[s.listColNum, { fontFamily: F.m, color: C.green }]}>{b.placement_rate}%</Text>
+                        </View>
+                      ))}
+                    </>
+                  )}
                 </View>
               )}
 
@@ -194,26 +211,33 @@ export default function AnalyticsScreen() {
               {/* ── Raw Offers Data ── */}
               {data.rawOffers && data.rawOffers.length > 0 && (
                 <View style={s.cardLarge}>
-                  <Text style={[s.cardTitle, { marginBottom: S.md }]}>Raw Offers Data ({data.rawOffers.length})</Text>
-                  {data.rawOffers.slice(0, visibleOffersCount).map((o: any, i: number) => (
-                    <View key={i} style={s.offerRow}>
-                      <View style={{ flex: 1, paddingRight: 8 }}>
-                        <Text style={s.offerCompany} numberOfLines={1}>{o.student_name || 'Unknown'}</Text>
-                        <Text style={s.offerBranch} numberOfLines={1}>{o.company_name} • {o.branch}</Text>
-                      </View>
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={s.offerType}>{o.offer_type}</Text>
-                        <Text style={[s.offerDate, {color: C.green, fontFamily: F.b}]}>{o.ctc || 'N/A'}</Text>
-                      </View>
-                    </View>
-                  ))}
-                  {data.rawOffers.length > visibleOffersCount && (
-                    <TouchableOpacity 
-                      style={{ marginTop: S.md, paddingVertical: 12, alignItems: 'center', backgroundColor: '#F0F0F0', borderRadius: R.sm }} 
-                      onPress={() => setVisibleOffersCount(prev => prev + 50)}
-                    >
-                      <Text style={{ fontFamily: F.m, color: C.t1 }}>Load More</Text>
-                    </TouchableOpacity>
+                  <TouchableOpacity style={s.cardHeader} onPress={() => setShowOffers(!showOffers)} activeOpacity={0.7}>
+                    <Text style={s.cardTitle}>Raw Offers Data ({data.rawOffers.length})</Text>
+                    <Ionicons name={showOffers ? "chevron-up" : "chevron-down"} size={20} color={C.t2} />
+                  </TouchableOpacity>
+                  {showOffers && (
+                    <>
+                      {data.rawOffers.slice(0, visibleOffersCount).map((o: any, i: number) => (
+                        <View key={i} style={s.offerRow}>
+                          <View style={{ flex: 1, paddingRight: 8 }}>
+                            <Text style={s.offerCompany} numberOfLines={1}>{o.student_name || 'Unknown'}</Text>
+                            <Text style={s.offerBranch} numberOfLines={1}>{o.company_name} • {o.branch}</Text>
+                          </View>
+                          <View style={{ alignItems: 'flex-end' }}>
+                            <Text style={s.offerType}>{o.offer_type}</Text>
+                            <Text style={[s.offerDate, {color: C.green, fontFamily: F.b}]}>{o.ctc || 'N/A'}</Text>
+                          </View>
+                        </View>
+                      ))}
+                      {data.rawOffers.length > visibleOffersCount && (
+                        <TouchableOpacity 
+                          style={{ marginTop: S.md, paddingVertical: 12, alignItems: 'center', backgroundColor: '#F0F0F0', borderRadius: R.sm }} 
+                          onPress={() => setVisibleOffersCount(prev => prev + 50)}
+                        >
+                          <Text style={{ fontFamily: F.m, color: C.t1 }}>Load More</Text>
+                        </TouchableOpacity>
+                      )}
+                    </>
                   )}
                 </View>
               )}
