@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { apiClient } from '../api/client';
 import { AuthContext } from '../context/AuthContext';
 import { C, F, R, S, card } from '../components/theme';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 type Application = { company_name: string; ctc: string; offer_type: string; status: string };
 type Tab = 'Applications' | 'Company Lookup';
@@ -47,11 +48,11 @@ export default function HubScreen() {
     finally { setLookupLoading(false); }
   };
 
-  const renderApp = ({ item }: { item: Application }) => {
+  const renderApp = ({ item, index }: { item: Application, index: number }) => {
     const sCol = getStatusColor(item.status);
     const l = (item.company_name || '?').charAt(0).toUpperCase();
     return (
-      <View style={s.appCard}>
+      <Animated.View entering={FadeInDown.duration(400).delay(index * 100)} style={s.appCard}>
         <View style={s.appBody}>
           <Text style={s.appName} numberOfLines={1}>{item.company_name}</Text>
           <Text style={s.appRole} numberOfLines={1}>{item.offer_type || '—'}</Text>
@@ -62,7 +63,7 @@ export default function HubScreen() {
             <Text style={[s.statusText, { color: sCol }]}>{item.status}</Text>
           </View>
         </View>
-      </View>
+      </Animated.View>
     );
   };
 
@@ -129,9 +130,9 @@ export default function HubScreen() {
 
           {result && !lookupLoading && (
             result.error ? (
-              <View style={[card, { padding: S.md, backgroundColor: C.redDim }]}><Text style={{fontFamily:F.m, color:C.red}}>{result.error}</Text></View>
+              <Animated.View entering={FadeInDown.duration(400)} style={[card, { padding: S.md, backgroundColor: C.redDim }]}><Text style={{fontFamily:F.m, color:C.red}}>{result.error}</Text></Animated.View>
             ) : (
-              <View style={{ gap: S.md }}>
+              <Animated.View entering={FadeInDown.duration(400)} style={{ gap: S.md }}>
                 <View style={{ flexDirection: 'row', gap: S.md }}>
                   <View style={[card, { flex: 1, padding: S.lg }]}>
                     <Text style={s.lookupStatLabel}>AVG CTC</Text>
@@ -150,7 +151,7 @@ export default function HubScreen() {
                   <Text style={s.lookupStatLabel}>TYPICAL TIMELINE</Text>
                   <Text style={s.lookupInfoVal}>{result.timeline?.join(' → ') || '—'}</Text>
                 </View>
-              </View>
+              </Animated.View>
             )
           )}
         </ScrollView>

@@ -6,7 +6,8 @@ import * as Google from 'expo-auth-session/providers/google';
 import * as AuthSession from 'expo-auth-session';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
-import { C, F, R, S, card, innerShadowBox, softShadow } from '../components/theme';
+import { C, F, R, S, card, softShadow } from '../components/theme';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -34,16 +35,16 @@ export default function LoginScreen() {
     <SafeAreaView style={s.root}>
       
       {/* ── Header ── */}
-      <View style={s.header}>
+      <Animated.View entering={FadeInDown.duration(600).delay(100)} style={s.header}>
         <View style={s.logoBox}>
           <Ionicons name="rocket-outline" size={24} color={C.navy} />
         </View>
         <Text style={s.title}>PlaceTrack</Text>
         <Text style={s.sub}>IIITD Placement Intelligence</Text>
-      </View>
+      </Animated.View>
 
       {/* ── Feature Cards (Neumorphic) ── */}
-      <View style={s.features}>
+      <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.features}>
         {[
           { title: 'Active Offers', val: '1.2k', sub: '+12.4%', subColor: C.green, icon: 'cash-outline' },
           { title: 'Companies', val: '142', sub: 'Hiring now', subColor: C.gold, icon: 'business-outline' },
@@ -57,10 +58,10 @@ export default function LoginScreen() {
             <Text style={[s.cardSub, { color: f.subColor }]}>{f.sub}</Text>
           </View>
         ))}
-      </View>
+      </Animated.View>
 
       {/* ── Text List ── */}
-      <View style={s.list}>
+      <Animated.View entering={FadeInDown.duration(600).delay(300)} style={s.list}>
         <Text style={s.listHead}>Key Features</Text>
         {[
           { t: 'Daily personalized AI briefings' },
@@ -72,10 +73,10 @@ export default function LoginScreen() {
             <Text style={s.listText}>{item.t}</Text>
           </View>
         ))}
-      </View>
+      </Animated.View>
 
       {/* ── CTA ── */}
-      <View style={s.footer}>
+      <Animated.View entering={FadeInUp.duration(600).delay(400)} style={s.footer}>
         <TouchableOpacity
           style={[s.btn, (!request || loading) && { opacity: 0.6 }]}
           onPress={() => { setLoading(true); promptAsync(); }}
@@ -90,7 +91,7 @@ export default function LoginScreen() {
           )}
         </TouchableOpacity>
         <Text style={s.fine}>IIITD Google accounts only</Text>
-      </View>
+      </Animated.View>
       
     </SafeAreaView>
   );
@@ -112,9 +113,9 @@ const s = StyleSheet.create({
   features: { flexDirection: 'row', gap: S.md, marginBottom: S.xl },
   card: { ...card, flex: 1, padding: S.lg },
   iconWrap: {
-    width: 32, height: 32, borderRadius: R.md, backgroundColor: C.s2,
+    width: 32, height: 32, borderRadius: R.md, backgroundColor: C.bg,
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: S.md, ...innerShadowBox,
+    marginBottom: S.md,
   },
   cardTitle: { fontFamily: F.m, fontSize: 13, color: C.t1, marginBottom: 8 },
   cardVal: { fontFamily: F.b, fontSize: 28, color: C.t1, letterSpacing: -0.5, marginBottom: 6 },

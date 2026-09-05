@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { apiClient } from '../api/client';
 import { AuthContext } from '../context/AuthContext';
 import { C, F, R, S, card } from '../components/theme';
+import CircularProgress from 'react-native-circular-progress-indicator';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 export default function CopilotScreen() {
   const [brief, setBrief] = useState<any>(null);
@@ -51,7 +53,7 @@ export default function CopilotScreen() {
       >
         
         {/* ── Welcome ── */}
-        <View style={s.welcome}>
+        <Animated.View entering={FadeInDown.duration(500)} style={s.welcome}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View>
               <Text style={s.title}>{greeting}</Text>
@@ -62,14 +64,14 @@ export default function CopilotScreen() {
             </View>
           </View>
           <Text style={s.subtitle}>Let's ace your placements today!</Text>
-        </View>
+        </Animated.View>
 
         {loading ? (
           <View style={{ paddingVertical: 80, alignItems: 'center' }}><ActivityIndicator size="large" color={C.gold} /></View>
         ) : brief ? (
           <>
             {/* ── Your Next Action Card ── */}
-            <View style={s.card}>
+            <Animated.View entering={FadeInDown.duration(500).delay(100)} style={s.card}>
               <View style={s.cardHeader}>
                 <Ionicons name="sparkles" size={14} color={C.gold} />
                 <Text style={s.cardLabel}>YOUR NEXT ACTION</Text>
@@ -80,30 +82,40 @@ export default function CopilotScreen() {
               </View>
               <View style={s.actionInfoRow}>
                 <Ionicons name="time-outline" size={14} color={C.gold} />
-                <Text style={s.actionInfoText}>{brief.next_action?.time_location}</Text>
+                <Text style={s.actionInfoText}>
+                  {brief.next_action?.countdown !== 'Continuous' && brief.next_action?.countdown !== 'No upcoming events scheduled' 
+                    ? `${brief.next_action?.countdown?.replace('Upcoming on ', '')} • ` 
+                    : ''}
+                  {brief.next_action?.time_location}
+                </Text>
               </View>
               
-              <Text style={s.countdownText}>
-                {brief.next_action?.countdown}
-              </Text>
-              
-              <TouchableOpacity style={s.btnGold}>
-                <Text style={s.btnGoldText}>View Details</Text>
-                <Ionicons name="arrow-forward" size={14} color={C.t1} />
-              </TouchableOpacity>
               <Ionicons name="clipboard-outline" size={80} color={C.goldDim} style={s.cardDecoIcon} />
-            </View>
+            </Animated.View>
 
             {/* ── Today's Progress ── */}
-            <View style={s.card}>
+            <Animated.View entering={FadeInDown.duration(500).delay(200)} style={s.card}>
               <View style={[s.rowSpace, { marginBottom: S.md }]}>
                 <Text style={s.sectionTitle}>Today's Progress</Text>
                 <Text style={s.progressRatio}>{completedCount}/{checklist.length}</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.xl }}>
-                <View style={s.progressCircle}>
-                  <Text style={s.progressCircleText}>{percentage}%</Text>
-                </View>
+                <CircularProgress
+                  value={percentage}
+                  initialValue={0}
+                  radius={40}
+                  inActiveStrokeColor={C.goldMuted}
+                  activeStrokeColor={C.gold}
+                  inActiveStrokeOpacity={1}
+                  inActiveStrokeWidth={6}
+                  activeStrokeWidth={6}
+                  valueSuffix={''}
+                  progressValueColor={C.t1}
+                  titleStyle={{ fontFamily: F.sb, fontSize: 16, color: C.t1 }}
+                  progressValueStyle={{ fontFamily: F.sb, fontSize: 16, color: C.t1 }}
+                  subtitleStyle={{ fontFamily: F.sb, fontSize: 16, color: C.t1 }}
+                  duration={1000}
+                />
                 <View style={{ flex: 1, gap: 8 }}>
                   {checklist.map((item: any, i: number) => (
                     <TouchableOpacity key={i} onPress={() => toggleCheck(i)} activeOpacity={0.7} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -113,45 +125,9 @@ export default function CopilotScreen() {
                   ))}
                 </View>
               </View>
-            </View>
+            </Animated.View>
 
-            {/* ── AI Study Plan ── */}
-            <View style={s.card}>
-              <View style={s.rowSpace}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Ionicons name="sparkles" size={16} color={C.t1} />
-                  <Text style={s.sectionTitle}>AI Study Plan</Text>
-                </View>
-                <Text style={s.viewPlan}>View Plan</Text>
-              </View>
-              <View style={{ marginTop: S.md, marginBottom: S.lg }}>
-                <Text style={s.focusText}>Focus: {brief.study_plan?.focus}</Text>
-                <Text style={s.focusSub}>{brief.study_plan?.recommended_time}</Text>
-              </View>
-              <View style={s.divider} />
-              <View style={s.rowSpace}>
-                <Text style={s.nextActionText}>Next: {brief.study_plan?.next_topic}</Text>
-                <View style={s.playBtn}>
-                  <Ionicons name="play" size={12} color={C.gold} />
-                </View>
-              </View>
-            </View>
 
-            {/* ── Things to Carry ── */}
-            <View style={s.card}>
-              <View style={s.rowSpace}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Ionicons name="briefcase" size={16} color={C.red} />
-                  <Text style={s.sectionTitle}>Things to Carry</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={C.t1} />
-              </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: S.md }}>
-                {(brief.things_to_carry || []).map((t: string, i: number) => (
-                  <View key={i} style={s.carryPill}><Text style={s.carryText}>{t}</Text></View>
-                ))}
-              </ScrollView>
-            </View>
           </>
         ) : (
           <View style={{ paddingVertical: 40, alignItems: 'center' }}>

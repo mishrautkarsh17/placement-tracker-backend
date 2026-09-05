@@ -286,10 +286,39 @@ with tab1:
     
     with st.expander(" Your Daily Placement Brief", expanded=True):
         brief = fetch_daily_brief(roll_no)
-        if "I'm having trouble" in brief or "Rate Limit" in brief:
+        if isinstance(brief, str) and ("I'm having trouble" in brief or "Rate Limit" in brief):
             st.error(f" **AI Unavailable:** {brief}")
+        elif isinstance(brief, dict):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("###  Your Next Action")
+                na = brief.get("next_action", {})
+                company = na.get("company", "")
+                title = na.get("title", "")
+                tag = na.get("tag", "")
+                countdown = na.get("countdown", "")
+                time_loc = na.get("time_location", "")
+                
+                st.markdown(f"**{company} {title}** &nbsp;` {tag} `")
+                
+                time_str = ""
+                if countdown and countdown.lower() not in ["continuous", "no upcoming events scheduled"]:
+                    time_str += countdown.replace("Upcoming on ", "") + " • "
+                time_str += time_loc
+                
+                st.caption(f" {time_str}")
+                
+            with col2:
+                st.markdown("###  Today's Progress")
+                prog = brief.get("progress", {})
+                checklist = prog.get("checklist", [])
+                
+                for item in checklist:
+                    # Streamlit checkboxes (read-only for preview)
+                    st.checkbox(item.get("task", ""), value=item.get("done", False), key=item.get("task", ""))
         else:
-            st.markdown(brief)
+            st.write(brief)
                 
     st.divider()
     

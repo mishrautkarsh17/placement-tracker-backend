@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { apiClient } from '../api/client';
 import { AuthContext } from '../context/AuthContext';
 import { C, F, R, S, card } from '../components/theme';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 type CalEvent = { Date: string; Day: string; Company: string; Process: string; Mode: string; TestStartTime: string; InterviewStartTime: string };
 
@@ -100,7 +101,7 @@ export default function CalendarScreen() {
               let badgeText = (item.Process || 'EVENT').toUpperCase();
 
               return (
-                <View key={index} style={s.timelineGroup}>
+                <Animated.View entering={FadeInDown.duration(400).delay(index * 100)} key={index} style={s.timelineGroup}>
                   {index !== displayed.length - 1 && <View style={s.timelineLine} />}
                   
                   <View style={s.dateHeader}>
@@ -124,7 +125,7 @@ export default function CalendarScreen() {
                       </View>
                     </View>
                   </View>
-                </View>
+                </Animated.View>
               );
             })
           )}

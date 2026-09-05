@@ -289,6 +289,10 @@ def get_daily_brief(student_id: str):
     1. Find the SINGLE most immediate upcoming event (Test or Interview) in the next 7 days. This MUST be the "next_action".
     2. Generate a "study_plan" and "checklist" of 4-5 tasks specifically tailored to prepare for this exact event and company.
     
+    CRITICAL: The study plan and checklist MUST be highly specific and technical, not generic. 
+    DO NOT use generic terms like "DSA", "DBMS", "OS", "OOPS".
+    INSTEAD use specific topics like "Dynamic Programming on Trees", "OS Paging & Virtual Memory", "SQL Window Functions", "Sliding Window on Arrays", "Implement LRU Cache".
+    
     Output strictly as a JSON object with no markdown wrappers, matching this exact structure:
     {
         "next_action": {
@@ -303,20 +307,20 @@ def get_daily_brief(student_id: str):
             "total": 5,
             "percentage": 0,
             "checklist": [
-                {"task": "[Specific prep task for the company]", "done": false},
-                {"task": "[Specific prep task]", "done": false},
-                {"task": "[Specific prep task]", "done": false}
+                {"task": "[Specific technical task, e.g., Practice DP on Grids]", "done": false},
+                {"task": "[Specific technical task, e.g., Revise ACID properties]", "done": false},
+                {"task": "[Specific technical task]", "done": false}
             ]
         },
         "study_plan": {
-            "focus": "[e.g. DSA + Aptitude]",
+            "focus": "[Specific technical focus, e.g. Graph Algorithms & SQL]",
             "recommended_time": "[e.g. 2h 30m of focused study]",
-            "next_topic": "[e.g. Arrays & Hashing]"
+            "next_topic": "[Specific next topic, e.g. Dijkstra's Algorithm]"
         },
         "things_to_carry": ["Photo ID", "Pens", "Resume"]
     }
     
-    Ensure the JSON is completely valid. If no events are upcoming, provide a generic interview prep plan.
+    Ensure the JSON is completely valid. If no events are upcoming, provide a highly specific general interview prep plan focusing on advanced topics.
     """
     
     raw_brief = generate_copilot_response(prompt, context)
@@ -345,15 +349,15 @@ def get_daily_brief(student_id: str):
             
             structured_brief = {
                 "next_action": {"company": str(comp), "title": str(title), "time_location": str(date), "countdown": "Upcoming", "tag": "UPCOMING"},
-                "progress": {"completed": 0, "total": 3, "percentage": 0, "checklist": [{"task": f"Research {comp}", "done": False}, {"task": "Review Job Description", "done": False}, {"task": "Practice Core Topics", "done": False}]},
-                "study_plan": {"focus": f"Prep for {comp}", "recommended_time": "2 hours daily", "next_topic": "Past Interview Experiences"},
+                "progress": {"completed": 0, "total": 3, "percentage": 0, "checklist": [{"task": f"Solve Top 50 Leetcode for {comp}", "done": False}, {"task": "Revise OS Virtual Memory Concepts", "done": False}, {"task": "Practice System Design: URL Shortener", "done": False}]},
+                "study_plan": {"focus": f"Advanced Prep for {comp}", "recommended_time": "2 hours daily", "next_topic": "Dynamic Programming: Knapsack"},
                 "things_to_carry": ["Laptop", "Notebook", "Pen"]
             }
         else:
             structured_brief = {
                 "next_action": {"company": "Placement Prep", "title": "Self Study", "time_location": "Anytime", "countdown": "Continuous", "tag": "ONGOING"},
-                "progress": {"completed": 1, "total": 4, "percentage": 25, "checklist": [{"task": "Check Portal", "done": True}, {"task": "Practice DSA", "done": False}, {"task": "Aptitude", "done": False}, {"task": "Mock Interview", "done": False}]},
-                "study_plan": {"focus": "General Prep", "recommended_time": "2 hours daily", "next_topic": "Data Structures"},
+                "progress": {"completed": 1, "total": 4, "percentage": 25, "checklist": [{"task": "Solve 3 Hard Graph Problems", "done": True}, {"task": "Implement LRU Cache in Python", "done": False}, {"task": "Revise SQL Window Functions", "done": False}, {"task": "Mock Interview: System Design", "done": False}]},
+                "study_plan": {"focus": "Backend Engineering Prep", "recommended_time": "2 hours daily", "next_topic": "Distributed Systems basics"},
                 "things_to_carry": ["Laptop", "Notebook", "Water"]
             }
 
