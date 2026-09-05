@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { apiClient } from '../api/client';
@@ -10,19 +10,53 @@ type AnalyticsData = {
   branch_data: any[];
   batch_data: any[];
   recent_offers?: any[];
+  rawOffers?: any[];
 };
 
 export default function AnalyticsScreen() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [syncingOffers, setSyncingOffers] = useState(false);
+  const [syncingCTC, setSyncingCTC] = useState(false);
 
   const fetch_ = async () => {
-    try { const r = await apiClient.get('/analytics'); setData(r.data); }
+    try { 
+      const [r, o] = await Promise.all([
+        apiClient.get('/analytics'),
+        apiClient.get('/offers')
+      ]);
+      setData({ ...r.data, rawOffers: o.data.data }); 
+    }
     catch {} finally { setLoading(false); setRefreshing(false); }
   };
   useEffect(() => { fetch_(); }, []);
   const onRefresh = () => { setRefreshing(true); fetch_(); };
+
+  const handleSyncOffers = async () => {
+    setSyncingOffers(true);
+    try {
+      await apiClient.post('/sync-email-offers');
+      Alert.alert('Success', 'Emails synced successfully!');
+      fetch_();
+    } catch (e) {
+      Alert.alert('Error', 'Failed to sync offers.');
+    } finally {
+      setSyncingOffers(false);
+    }
+  };
+
+  const handleSyncCTC = async () => {
+    setSyncingCTC(true);
+    try {
+      await apiClient.post('/sync-ctc-enrichment');
+      Alert.alert('Success', 'CTC Enrichment started in background.');
+    } catch (e) {
+      Alert.alert('Error', 'Failed to start CTC sync.');
+    } finally {
+      setSyncingCTC(false);
+    }
+  };
 
   return (
     <SafeAreaView edges={['top']} style={s.root}>
@@ -45,6 +79,16 @@ export default function AnalyticsScreen() {
         >
           {data?.overall ? (
             <>
+              {/* ── Action Buttons ── */}
+              <View style={{ flexDirection: 'row', gap: S.sm, marginBottom: S.md }}>
+                <TouchableOpacity style={s.actionBtn} onPress={handleSyncOffers} disabled={syncingOffers}>
+                  {syncingOffers ? <ActivityIndicator size="small" color={C.t1} /> : <><Ionicons name="mail" size={14} color={C.t1} /><Text style={s.actionBtnText}>Sync Offers</Text></>}
+                </TouchableOpacity>
+                <TouchableOpacity style={s.actionBtn} onPress={handleSyncCTC} disabled={syncingCTC}>
+                  {syncingCTC ? <ActivityIndicator size="small" color={C.t1} /> : <><Ionicons name="cash" size={14} color={C.t1} /><Text style={s.actionBtnText}>Sync CTC</Text></>}
+                </TouchableOpacity>
+              </View>
+
               {/* ── 2x2 Grid ── */}
               <View style={s.grid}>
                 <View style={s.metricCard}>
@@ -146,6 +190,25 @@ export default function AnalyticsScreen() {
                 </View>
               )}
 
+              {/* ── Raw Offers Data ── */}
+              {data.rawOffers && data.rawOffers.length > 0 && (
+                <View style={s.cardLarge}>
+                  <Text style={[s.cardTitle, { marginBottom: S.md }]}>Raw Offers Data</Text>
+                  {data.rawOffers.slice(0, 50).map((o: any, i: number) => (
+                    <View key={i} style={s.offerRow}>
+                      <View style={{ flex: 1, paddingRight: 8 }}>
+                        <Text style={s.offerCompany} numberOfLines={1}>{o.company_name}</Text>
+                        <Text style={s.offerBranch} numberOfLines={1}>{o.branch}</Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={s.offerType}>{o.offer_type}</Text>
+                        <Text style={[s.offerDate, {color: C.green, fontFamily: F.b}]}>{o.ctc || 'N/A'}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+
             </>
           ) : (
             <View style={s.centered}><Text style={{fontFamily:F.r, color:C.t2}}>No analytics data available</Text></View>
@@ -171,6 +234,9 @@ const s = StyleSheet.create({
   metricLabel: { fontFamily: F.m, fontSize: 13, color: C.t1, marginBottom: 4 },
   metricVal: { fontFamily: F.b, fontSize: 28, color: C.t1, marginBottom: 4 },
   metricSub: { fontFamily: F.r, fontSize: 11, color: C.t2 },
+
+  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0F0F0', paddingVertical: 10, borderRadius: R.sm, gap: 6 },
+  actionBtnText: { fontFamily: F.m, fontSize: 13, color: C.t1 },
 
   cardLarge: { ...card, padding: S.lg, marginBottom: S.md },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: S.lg },

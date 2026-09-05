@@ -25,6 +25,7 @@ export default function CalendarScreen() {
   const [applied, setApplied] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   
   // Set default filter to 'My Companies' (Personalised)
   const [filter, setFilter] = useState('My Companies');
@@ -62,6 +63,18 @@ export default function CalendarScreen() {
     return true; // fallback
   });
 
+  const handleSyncCalendar = async () => {
+    setSyncing(true);
+    try {
+      await apiClient.post('/sync-calendar');
+      await fetchData();
+    } catch (e) {
+      console.log('Sync failed', e);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   return (
     <SafeAreaView edges={['top']} style={s.root}>
       {/* ── Header ── */}
@@ -70,6 +83,9 @@ export default function CalendarScreen() {
           <Text style={s.title}>Schedule</Text>
           <Text style={s.subtitle}>Stay on top of your events</Text>
         </View>
+        <TouchableOpacity style={s.syncBtn} onPress={handleSyncCalendar} disabled={syncing}>
+          {syncing ? <ActivityIndicator size="small" color={C.gold} /> : <><Ionicons name="sync" size={16} color={C.gold} /><Text style={s.syncBtnText}>Sync Sheet</Text></>}
+        </TouchableOpacity>
       </View>
 
       {/* ── Filters ── */}
@@ -142,6 +158,8 @@ const s = StyleSheet.create({
   title: { fontFamily: F.b, fontSize: 24, color: C.t1 },
   subtitle: { fontFamily: F.r, fontSize: 13, color: C.t2, marginTop: 4 },
   iconBtn: { padding: 4 },
+  syncBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.goldMuted, paddingHorizontal: 12, paddingVertical: 8, borderRadius: R.full, gap: 6 },
+  syncBtnText: { fontFamily: F.m, fontSize: 12, color: C.gold },
 
   filterScroll: { paddingHorizontal: S.lg, paddingBottom: S.sm, gap: 10 },
   filterPill: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: R.full, borderWidth: 1, borderColor: '#EAEAEA', backgroundColor: C.s1 },
