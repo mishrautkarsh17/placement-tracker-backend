@@ -19,6 +19,7 @@ import CalendarScreen from './screens/CalendarScreen';
 import AnalyticsScreen from './screens/AnalyticsScreen';
 import HubScreen      from './screens/HubScreen';
 import { C, F } from './components/theme';
+import { registerForPushNotificationsAsync } from './utils/notifications';
 
 const Tab = createBottomTabNavigator();
 
@@ -75,6 +76,11 @@ function RootNavigator() {
 
 export default function App() {
   const [fontsLoaded] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold });
+  
+  React.useEffect(() => {
+    registerForPushNotificationsAsync();
+  }, []);
+
   if (!fontsLoaded) return <View style={{flex:1,justifyContent:'center',alignItems:'center',backgroundColor:C.bg}}><ActivityIndicator color={C.navy} size="large" /></View>;
   return (
     <SafeAreaProvider>
