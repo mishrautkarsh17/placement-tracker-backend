@@ -57,14 +57,14 @@ function RootNavigator() {
               shadowColor: '#000',
               shadowOpacity: 0.08,
               shadowRadius: 12,
-              height: 60,
-              paddingBottom: 6,
-              paddingTop: 8,
+              height: 52,
+              paddingBottom: 4,
+              paddingTop: 4,
               marginBottom: 10,
               marginHorizontal: 16,
               borderRadius: 20,
             },
-            tabBarLabelStyle: { fontFamily: F.m, fontSize: 10, letterSpacing: 0.2 },
+            tabBarShowLabel: false,
           })}
         >
           <Tab.Screen name="Copilot"   component={CopilotScreen} />
