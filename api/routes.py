@@ -257,11 +257,23 @@ def _get_filtered_upcoming_events(cal_data, app_data):
 
 @router.get("/daily-brief/{student_id}")
 def get_daily_brief(student_id: str):
-    cache_key = f"daily_brief_{student_id}"
-    cached = data_cache.get(cache_key)
-    if cached is not None:
-        return {"brief": cached}
-        
+    import json
+    from datetime import datetime
+    today = datetime.now().strftime("%Y-%m-%d")
+    data_dir = os.path.join(os.path.dirname(__file__), "../data")
+    os.makedirs(data_dir, exist_ok=True)
+    file_path = os.path.join(data_dir, f"daily_brief_{student_id}_{today}.json")
+
+    # If today's brief already exists on disk, load and return it persistently!
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r") as f:
+                return {"brief": json.load(f)}
+        except Exception as e:
+            logging.error(f"Error reading daily brief file: {e}")
+            # If corrupt, we will just regenerate
+            pass
+
     from ai.router import generate_copilot_response
     
     # Gather Context
@@ -361,8 +373,29 @@ def get_daily_brief(student_id: str):
                 "things_to_carry": ["Laptop", "Notebook", "Water"]
             }
 
-    data_cache.set(cache_key, structured_brief)
+    # Save generated brief to file persistently for the day
+    try:
+        with open(file_path, "w") as f:
+            json.dump(structured_brief, f, indent=2)
+    except Exception as e:
+        logging.error(f"Failed to save persistent brief: {e}")
+
     return {"brief": structured_brief}
+
+@router.post("/daily-brief/{student_id}")
+def update_daily_brief(student_id: str, brief_data: dict):
+    """Save an updated daily brief (e.g. checkbox progress) back to the persistent file."""
+    import json
+    from datetime import datetime
+    today = datetime.now().strftime("%Y-%m-%d")
+    file_path = os.path.join(os.path.dirname(__file__), f"../data/daily_brief_{student_id}_{today}.json")
+    
+    try:
+        with open(file_path, "w") as f:
+            json.dump(brief_data, f, indent=2)
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/company/{company_name}")
 def get_company_info(company_name: str):

@@ -29,10 +29,27 @@ export default function CopilotScreen() {
 
   useEffect(() => { fetch_(); }, [user]);
 
-  const toggleCheck = (idx: number) => {
+  const toggleCheck = async (idx: number) => {
     const newList = [...checklist];
     newList[idx].done = !newList[idx].done;
     setChecklist(newList);
+
+    if (brief && user) {
+      const updatedBrief = {
+        ...brief,
+        progress: {
+          ...brief.progress,
+          checklist: newList,
+          completed: newList.filter(i => i.done).length
+        }
+      };
+      setBrief(updatedBrief);
+      try {
+        await apiClient.post(`/daily-brief/${user.rollNo}`, updatedBrief);
+      } catch (e) {
+        console.error("Failed to sync progress", e);
+      }
+    }
   };
 
   const completedCount = checklist.filter(i => i.done).length;
