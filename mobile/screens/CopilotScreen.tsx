@@ -111,9 +111,13 @@ export default function CopilotScreen() {
 
             {/* ── Today's Progress ── */}
             <Animated.View entering={FadeInDown.duration(500).delay(200)} style={s.card}>
-              <View style={[s.rowSpace, { marginBottom: S.md }]}>
+              <View style={[s.rowSpace, { marginBottom: S.sm }]}>
                 <Text style={s.sectionTitle}>Today's Progress</Text>
                 <Text style={s.progressRatio}>{completedCount}/{checklist.length}</Text>
+              </View>
+              {/* Horizontal Progress Bar */}
+              <View style={{ height: 6, backgroundColor: C.goldMuted, borderRadius: 3, marginBottom: S.lg, overflow: 'hidden' }}>
+                <Animated.View style={{ height: '100%', backgroundColor: C.gold, borderRadius: 3, width: `${percentage}%` }} />
               </View>
               <View style={{ gap: 12 }}>
                 {checklist.map((item: any, i: number) => (
