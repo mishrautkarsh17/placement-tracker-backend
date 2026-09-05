@@ -19,6 +19,7 @@ export default function AnalyticsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [syncingOffers, setSyncingOffers] = useState(false);
   const [syncingCTC, setSyncingCTC] = useState(false);
+  const [visibleOffersCount, setVisibleOffersCount] = useState(50);
 
   const fetch_ = async () => {
     try { 
@@ -193,12 +194,12 @@ export default function AnalyticsScreen() {
               {/* ── Raw Offers Data ── */}
               {data.rawOffers && data.rawOffers.length > 0 && (
                 <View style={s.cardLarge}>
-                  <Text style={[s.cardTitle, { marginBottom: S.md }]}>Raw Offers Data</Text>
-                  {data.rawOffers.slice(0, 50).map((o: any, i: number) => (
+                  <Text style={[s.cardTitle, { marginBottom: S.md }]}>Raw Offers Data ({data.rawOffers.length})</Text>
+                  {data.rawOffers.slice(0, visibleOffersCount).map((o: any, i: number) => (
                     <View key={i} style={s.offerRow}>
                       <View style={{ flex: 1, paddingRight: 8 }}>
-                        <Text style={s.offerCompany} numberOfLines={1}>{o.company_name}</Text>
-                        <Text style={s.offerBranch} numberOfLines={1}>{o.branch}</Text>
+                        <Text style={s.offerCompany} numberOfLines={1}>{o.student_name || 'Unknown'}</Text>
+                        <Text style={s.offerBranch} numberOfLines={1}>{o.company_name} • {o.branch}</Text>
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
                         <Text style={s.offerType}>{o.offer_type}</Text>
@@ -206,6 +207,14 @@ export default function AnalyticsScreen() {
                       </View>
                     </View>
                   ))}
+                  {data.rawOffers.length > visibleOffersCount && (
+                    <TouchableOpacity 
+                      style={{ marginTop: S.md, paddingVertical: 12, alignItems: 'center', backgroundColor: '#F0F0F0', borderRadius: R.sm }} 
+                      onPress={() => setVisibleOffersCount(prev => prev + 50)}
+                    >
+                      <Text style={{ fontFamily: F.m, color: C.t1 }}>Load More</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
 
