@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Dimensions, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
@@ -15,9 +15,11 @@ export default function LoginScreen() {
   const { login } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
   const [request, response, promptAsync] = Google.useAuthRequest({
+    iosClientId: '818439802211-h71rgar9kb1u33g46o3jmtq715nkr90u.apps.googleusercontent.com',
+    androidClientId: '818439802211-h71rgar9kb1u33g46o3jmtq715nkr90u.apps.googleusercontent.com',
     clientId: '818439802211-h71rgar9kb1u33g46o3jmtq715nkr90u.apps.googleusercontent.com',
     scopes: ['profile', 'email'],
-    redirectUri: AuthSession.makeRedirectUri(),
+    redirectUri: AuthSession.makeRedirectUri({ native: 'com.placementtracker.app:/' }),
   });
 
   useEffect(() => {
@@ -36,9 +38,7 @@ export default function LoginScreen() {
       
       {/* ── Header ── */}
       <Animated.View entering={FadeInDown.duration(600).delay(100)} style={s.header}>
-        <View style={s.logoBox}>
-          <Ionicons name="rocket-outline" size={24} color={C.navy} />
-        </View>
+        <Image source={require('../assets/logo.png')} style={s.logoImg} resizeMode="contain" />
         <Text style={s.title}>PlaceTrack</Text>
         <Text style={s.sub}>IIITD Placement Intelligence</Text>
       </Animated.View>
@@ -101,6 +101,7 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg, paddingHorizontal: S.xl },
   
   header: { alignItems: 'center', marginTop: S.xl * 2, marginBottom: S.xl },
+  logoImg: { width: 90, height: 90, marginBottom: S.lg },
   logoBox: {
     width: 60, height: 60, borderRadius: R.lg,
     backgroundColor: C.s1, alignItems: 'center', justifyContent: 'center',
