@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { apiClient } from '../api/client';
 import { AuthContext } from '../context/AuthContext';
 import { C, F, R, S, card } from '../components/theme';
-import CircularProgress from 'react-native-circular-progress-indicator';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 export default function CopilotScreen() {
@@ -116,31 +115,13 @@ export default function CopilotScreen() {
                 <Text style={s.sectionTitle}>Today's Progress</Text>
                 <Text style={s.progressRatio}>{completedCount}/{checklist.length}</Text>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.xl }}>
-                <CircularProgress
-                  value={percentage}
-                  initialValue={0}
-                  radius={40}
-                  inActiveStrokeColor={C.goldMuted}
-                  activeStrokeColor={C.gold}
-                  inActiveStrokeOpacity={1}
-                  inActiveStrokeWidth={6}
-                  activeStrokeWidth={6}
-                  valueSuffix={''}
-                  progressValueColor={C.t1}
-                  titleStyle={{ fontFamily: F.sb, fontSize: 16, color: C.t1 }}
-                  progressValueStyle={{ fontFamily: F.sb, fontSize: 16, color: C.t1 }}
-                  subtitleStyle={{ fontFamily: F.sb, fontSize: 16, color: C.t1 }}
-                  duration={1000}
-                />
-                <View style={{ flex: 1, gap: 8 }}>
-                  {checklist.map((item: any, i: number) => (
-                    <TouchableOpacity key={i} onPress={() => toggleCheck(i)} activeOpacity={0.7} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Ionicons name={item.done ? "checkmark-circle" : "ellipse-outline"} size={18} color={item.done ? C.green : C.t3} />
-                      <Text style={[s.checkText, item.done && s.checkTextDone]}>{item.task}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+              <View style={{ gap: 12 }}>
+                {checklist.map((item: any, i: number) => (
+                  <TouchableOpacity key={i} onPress={() => toggleCheck(i)} activeOpacity={0.7} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                    <Ionicons name={item.done ? "checkmark-circle" : "ellipse-outline"} size={20} color={item.done ? C.green : C.t3} style={{ marginTop: 1 }} />
+                    <Text style={[s.checkText, item.done && s.checkTextDone, { fontSize: 13, lineHeight: 18, paddingRight: 20 }]}>{item.task}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </Animated.View>
 
