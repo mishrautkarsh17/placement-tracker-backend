@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "PPT",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/logo.png",
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/icon.png"
+      "icon": "./assets/logo.png"
     },
     "android": {
       "adaptiveIcon": {

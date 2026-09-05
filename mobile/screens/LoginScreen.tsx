@@ -15,9 +15,9 @@ export default function LoginScreen() {
   const { login } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
   const [request, response, promptAsync] = Google.useAuthRequest({
-    androidClientId: '818439802211-t9p3bga590e50q9f807oshbpbn93rn0m.apps.googleusercontent.com',
     clientId: '818439802211-h71rgar9kb1u33g46o3jmtq715nkr90u.apps.googleusercontent.com',
     scopes: ['profile', 'email'],
+    redirectUri: AuthSession.makeRedirectUri({ useProxy: true }),
   });
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function LoginScreen() {
       <Animated.View entering={FadeInUp.duration(600).delay(400)} style={s.footer}>
         <TouchableOpacity
           style={[s.btn, (!request || loading) && { opacity: 0.6 }]}
-          onPress={() => { setLoading(true); promptAsync(); }}
+          onPress={() => { setLoading(true); promptAsync({ useProxy: true }); }}
           disabled={!request || loading}
           activeOpacity={0.8}
         >
