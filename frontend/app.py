@@ -645,8 +645,8 @@ with tab4:
         st.warning("Playwright Scraping Required")
         st.write("To sync your latest applications, please enter your pod.ai credentials. These are used live and never stored.")
         with st.form("sync_form"):
-            pod_email = st.text_input("pod.ai Email", value="")
-            pod_pwd = st.text_input("pod.ai Password", type="password")
+            pod_email = st.text_input("pod.ai Email", value="", key="pod_ai_email_input")
+            pod_pwd = st.text_input("pod.ai Password", type="password", key="pod_ai_pwd_input")
             if st.form_submit_button("Run Sync"):
                 if pod_email and pod_pwd:
                     with st.spinner("Scraping pod.ai... This may take a minute."):
