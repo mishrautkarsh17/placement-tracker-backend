@@ -257,12 +257,12 @@ def _get_all_offers(tab_name=OFFERS_SHEET_TAB) -> tuple[list[dict], dict[str, in
         row_idx = idx + 2
         student_id = str(rec.get("student_id", "")).strip().lower()
         company = str(rec.get("company_name", "")).strip().lower()
-        if student_id and student_id not in ("", "0", "none"):
-            key = f"{student_id}::{company}"
-        else:
-            student_name = str(rec.get("student_name", "")).strip().lower()
-            key = f"{student_name}::{company}"
-        dedup_map[key] = row_idx
+        student_name = str(rec.get("student_name", "")).strip().lower()
+        
+        if student_name and company:
+            dedup_map[f"{student_name}::{company}"] = row_idx
+        if student_id and student_id not in ("", "0", "none") and company:
+            dedup_map[f"{student_id}::{company}"] = row_idx
     return records, dedup_map
 
 def read_offers() -> pd.DataFrame:
@@ -400,8 +400,43 @@ def _upsert_offers_to_tab(records: list[PlacementRecord], tab_name: str):
     # Deduplicate incoming records
     unique_records = {}
     for r in records:
-        unique_records[r.dedup_key] = r
-    records = list(unique_records.values())
+        sid = r.student_id.lower().strip() if r.student_id else ""
+        sname = r.student_name.lower().strip()
+        comp = r.company_name.lower().strip()
+        
+        key_id = f"{sid}::{comp}" if sid else ""
+        key_name = f"{sname}::{comp}" if sname else ""
+        
+        existing_r = None
+        if key_id and key_id in unique_records:
+            existing_r = unique_records[key_id]
+        elif key_name and key_name in unique_records:
+            existing_r = unique_records[key_name]
+            
+        if existing_r:
+            if r.student_id and not existing_r.student_id:
+                existing_r.student_id = r.student_id
+            if r.ctc and r.ctc != "N/A":
+                existing_r.ctc = r.ctc
+            if r.offer_type and r.offer_type != "N/A" and existing_r.offer_type != "PPO":
+                existing_r.offer_type = r.offer_type
+            
+            if existing_r.student_id:
+                unique_records[f"{existing_r.student_id.lower().strip()}::{comp}"] = existing_r
+            unique_records[f"{existing_r.student_name.lower().strip()}::{comp}"] = existing_r
+        else:
+            if key_id:
+                unique_records[key_id] = r
+            if key_name:
+                unique_records[key_name] = r
+                
+    seen = set()
+    final_records = []
+    for r in unique_records.values():
+        if id(r) not in seen:
+            seen.add(id(r))
+            final_records.append(r)
+    records = final_records
         
     existing_records, dedup_map = _get_all_offers(tab_name)
     
@@ -410,36 +445,49 @@ def _upsert_offers_to_tab(records: list[PlacementRecord], tab_name: str):
     for r in existing_records:
         sid = str(r.get("student_id", "")).strip().lower()
         comp = str(r.get("company_name", "")).strip().lower()
-        if sid and sid not in ("", "0", "none"):
-            k = f"{sid}::{comp}"
-        else:
-            sname = str(r.get("student_name", "")).strip().lower()
-            k = f"{sname}::{comp}"
-        existing_map[k] = r
+        sname = str(r.get("student_name", "")).strip().lower()
+        if sname and comp:
+            existing_map[f"{sname}::{comp}"] = r
+        if sid and sid not in ("", "0", "none") and comp:
+            existing_map[f"{sid}::{comp}"] = r
     
     new_rows = []
     updates = []
     
     for record in records:
-        key = record.dedup_key
+        sid = record.student_id.lower().strip() if record.student_id else ""
+        sname = record.student_name.lower().strip()
+        comp = record.company_name.lower().strip()
+        
+        key_id = f"{sid}::{comp}" if sid else ""
+        key_name = f"{sname}::{comp}" if sname else ""
+        
+        match_key = None
+        if key_id and key_id in dedup_map:
+            match_key = key_id
+        elif key_name and key_name in dedup_map:
+            match_key = key_name
+            
         row_data = record.to_sheet_row()[:5]  # Exclude status for Offers sheet, let formula handle branch (col 6)
         
-        if key in dedup_map:
-            row_idx = dedup_map[key]
+        if match_key:
+            row_idx = dedup_map[match_key]
+            existing = existing_map[match_key]
             
+            # Preserve existing ID if incoming doesn't have it
+            if not row_data[1] and existing.get("student_id", ""):
+                row_data[1] = str(existing["student_id"])
+                
             # Merge: don't overwrite valid CTC/offer_type with N/A
-            if key in existing_map:
-                existing = existing_map[key]
-                # row_data[3] = offer_type, row_data[4] = ctc, row_data[5] = branch
-                existing_offer = existing.get("offer_type", "")
-                if row_data[3] == "PPO":
-                    pass # Always trust PPO from email
-                elif existing_offer not in ("N/A", ""):
-                    row_data[3] = existing_offer # Keep existing (likely from Pod.ai)
+            existing_offer = existing.get("offer_type", "")
+            if row_data[3] == "PPO":
+                pass # Always trust PPO from email
+            elif existing_offer not in ("N/A", ""):
+                row_data[3] = existing_offer # Keep existing (likely from Pod.ai)
 
-                if row_data[4] in ("N/A", "") and existing.get("ctc", "") not in ("N/A", ""):
-                    row_data[4] = existing.get("ctc", "")
-            
+            if row_data[4] in ("N/A", "") and existing.get("ctc", "") not in ("N/A", ""):
+                row_data[4] = existing.get("ctc", "")
+        
             updates.append({
                 'range': f"A{row_idx}:{chr(65+len(row_data)-1)}{row_idx}",
                 'values': [row_data]
@@ -593,10 +641,14 @@ def _get_all_applications() -> tuple[list[dict], dict[str, int]]:
     dedup_map = {}
     for idx, rec in enumerate(records):
         row_idx = idx + 2 
-        student_id = str(rec.get("student_id", "")).strip()
+        student_id = str(rec.get("student_id", "")).strip().lower()
         company = str(rec.get("company_name", "")).strip().lower()
-        key = f"{student_id}::{company}"
-        dedup_map[key] = row_idx
+        student_name = str(rec.get("student_name", "")).strip().lower()
+        
+        if student_name and company:
+            dedup_map[f"{student_name}::{company}"] = row_idx
+        if student_id and student_id not in ("", "0", "none") and company:
+            dedup_map[f"{student_id}::{company}"] = row_idx
         
     return records, dedup_map
 
@@ -622,8 +674,45 @@ def upsert_applications(records: list[PlacementRecord]):
     # Deduplicate incoming records
     unique_records = {}
     for r in records:
-        unique_records[r.dedup_key] = r
-    records = list(unique_records.values())
+        sid = r.student_id.lower().strip() if r.student_id else ""
+        sname = r.student_name.lower().strip()
+        comp = r.company_name.lower().strip()
+        
+        key_id = f"{sid}::{comp}" if sid else ""
+        key_name = f"{sname}::{comp}" if sname else ""
+        
+        existing_r = None
+        if key_id and key_id in unique_records:
+            existing_r = unique_records[key_id]
+        elif key_name and key_name in unique_records:
+            existing_r = unique_records[key_name]
+            
+        if existing_r:
+            if r.student_id and not existing_r.student_id:
+                existing_r.student_id = r.student_id
+            if r.ctc and r.ctc != "N/A":
+                existing_r.ctc = r.ctc
+            if r.offer_type and r.offer_type != "N/A" and existing_r.offer_type != "PPO":
+                existing_r.offer_type = r.offer_type
+            if r.status and r.status != "N/A":
+                existing_r.status = r.status
+            
+            if existing_r.student_id:
+                unique_records[f"{existing_r.student_id.lower().strip()}::{comp}"] = existing_r
+            unique_records[f"{existing_r.student_name.lower().strip()}::{comp}"] = existing_r
+        else:
+            if key_id:
+                unique_records[key_id] = r
+            if key_name:
+                unique_records[key_name] = r
+                
+    seen = set()
+    final_records = []
+    for r in unique_records.values():
+        if id(r) not in seen:
+            seen.add(id(r))
+            final_records.append(r)
+    records = final_records
         
     existing_records, dedup_map = _get_all_applications()
     
@@ -632,26 +721,46 @@ def upsert_applications(records: list[PlacementRecord]):
     for r in existing_records:
         sid = str(r.get("student_id", "")).strip().lower()
         comp = str(r.get("company_name", "")).strip().lower()
-        k = f"{sid}::{comp}" if sid else f"{str(r.get('student_name', '')).strip().lower()}::{comp}"
-        existing_map[k] = r
+        sname = str(r.get("student_name", "")).strip().lower()
+        if sname and comp:
+            existing_map[f"{sname}::{comp}"] = r
+        if sid and sid not in ("", "0", "none") and comp:
+            existing_map[f"{sid}::{comp}"] = r
     
     new_rows = []
     updates = []
     
     for record in records:
-        key = record.dedup_key
+        sid = record.student_id.lower().strip() if record.student_id else ""
+        sname = record.student_name.lower().strip()
+        comp = record.company_name.lower().strip()
+        
+        key_id = f"{sid}::{comp}" if sid else ""
+        key_name = f"{sname}::{comp}" if sname else ""
+        
+        match_key = None
+        if key_id and key_id in dedup_map:
+            match_key = key_id
+        elif key_name and key_name in dedup_map:
+            match_key = key_name
+            
         row_data = record.to_sheet_row()
         
-        if key in dedup_map:
-            row_idx = dedup_map[key]
+        if match_key:
+            row_idx = dedup_map[match_key]
             
             # Merge with existing data to prevent overwriting valid CTC/Offer Type with N/A
-            if key in existing_map:
-                existing = existing_map[key]
-                if row_data[3] in ("N/A", "") and existing.get("offer_type", "") not in ("N/A", ""):
-                    row_data[3] = existing.get("offer_type", "")
-                if row_data[4] in ("N/A", "") and existing.get("ctc", "") not in ("N/A", ""):
-                    row_data[4] = existing.get("ctc", "")
+            existing = existing_map[match_key]
+            
+            if not row_data[1] and existing.get("student_id", ""):
+                row_data[1] = str(existing["student_id"])
+                
+            if row_data[3] in ("N/A", "") and existing.get("offer_type", "") not in ("N/A", ""):
+                row_data[3] = existing.get("offer_type", "")
+            if row_data[4] in ("N/A", "") and existing.get("ctc", "") not in ("N/A", ""):
+                row_data[4] = existing.get("ctc", "")
+            if row_data[5] in ("N/A", "") and existing.get("status", "") not in ("N/A", ""):
+                row_data[5] = existing.get("status", "")
                     
             updates.append({
                 'range': f"A{row_idx}:{chr(65+len(row_data)-1)}{row_idx}",
