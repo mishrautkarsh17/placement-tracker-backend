@@ -23,14 +23,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
-        }
-      ],
+      "@react-native-google-signin/google-signin",
       "expo-web-browser",
       "expo-notifications"
     ],

@@ -397,6 +397,12 @@ def _upsert_offers_to_tab(records: list[PlacementRecord], tab_name: str):
     if not worksheet:
         return
         
+    # Deduplicate incoming records
+    unique_records = {}
+    for r in records:
+        unique_records[r.dedup_key] = r
+    records = list(unique_records.values())
+        
     existing_records, dedup_map = _get_all_offers(tab_name)
     
     # Build lookup to merge and preserve existing non-N/A values
@@ -612,6 +618,12 @@ def upsert_applications(records: list[PlacementRecord]):
     worksheet = _get_worksheet(APPLICATIONS_SHEET_TAB)
     if not worksheet:
         return
+        
+    # Deduplicate incoming records
+    unique_records = {}
+    for r in records:
+        unique_records[r.dedup_key] = r
+    records = list(unique_records.values())
         
     existing_records, dedup_map = _get_all_applications()
     

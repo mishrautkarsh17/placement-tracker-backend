@@ -71,7 +71,7 @@ def sync_offer_letters() -> dict:
             if d_str and d_str != "N/A":
                 try:
                     d_obj = datetime.strptime(d_str, "%Y-%m-%d %H:%M:%S")
-                    if d_obj.date() >= last_processed_time.date():
+                    if d_obj > last_processed_time:
                         recent_emails.append(e)
                 except ValueError:
                     # If date parsing fails, keep it just in case
@@ -99,50 +99,40 @@ def sync_offer_letters() -> dict:
                     if batch_records:
                         sheets_client.upsert_offers(batch_records)
                         results["email_records"] += len(batch_records)
-                        
-                        # Save state incrementally based on this batch's emails
-                        try:
-                            # Parse dates to find the latest in this batch
-                            latest_date = None
-                            for email in batch:
-                                d_str = email.get("date")
-                                if d_str and d_str != "N/A":
-                                    try:
-                                        d_obj = datetime.strptime(d_str, "%Y-%m-%d %H:%M:%S")
-                                        if not latest_date or d_obj > latest_date:
-                                            latest_date = d_obj
-                                    except ValueError:
-                                        pass
-                            
-                            if latest_date:
-                                # Update sheet coarse date with exact time
-                                new_sync_date = latest_date.strftime("%d-%b-%Y %H:%M:%S")
-                                sheets_client.write_last_sync_time(new_sync_date)
-                                
-                                # Update exact time in state file
-                                if latest_date > last_processed_time:
-                                    last_processed_time = latest_date
-                                    with open(STATE_FILE, "w") as f:
-                                        json.dump({"last_email_time": last_processed_time.isoformat()}, f)
-                                        
-                                logging.info(f"State advanced incrementally to {new_sync_date}")
-                        except Exception as e:
-                            logging.error(f"Could not write incremental state file: {e}")
-                            
                         logging.info(f"Batch {batch_num} done: upserted {len(batch_records)} records.")
                     else:
                         logging.warning(f"Batch {batch_num} returned no records.")
-                        all_success = False
                 except Exception as e:
                     err_msg = f"Batch {batch_num} failed: {e}"
                     logging.error(err_msg)
                     results["errors"].append(err_msg)
                     all_success = False
 
-            # Only advance sheet state if ALL batches succeeded
-            if results["email_records"] > 0:
-                sync_timestamp = datetime.now().strftime("%d-%b-%Y %H:%M:%S")
-                sheets_client.write_last_sync_time(sync_timestamp)
+            # Always advance state based on the emails we just successfully fed to Gemini
+            # regardless of whether Gemini found offers in them or not!
+            if all_success and recent_emails:
+                latest_date = None
+                for email in recent_emails:
+                    d_str = email.get("date")
+                    if d_str and d_str != "N/A":
+                        try:
+                            d_obj = datetime.strptime(d_str, "%Y-%m-%d %H:%M:%S")
+                            if not latest_date or d_obj > latest_date:
+                                latest_date = d_obj
+                        except ValueError:
+                            pass
+                
+                if latest_date and latest_date > last_processed_time:
+                    last_processed_time = latest_date
+                    new_sync_date = latest_date.strftime("%d-%b-%Y %H:%M:%S")
+                    
+                    try:
+                        sheets_client.write_last_sync_time(new_sync_date)
+                        with open(STATE_FILE, "w") as f:
+                            json.dump({"last_email_time": last_processed_time.isoformat()}, f)
+                        logging.info(f"State advanced to {new_sync_date} after processing all batches.")
+                    except Exception as e:
+                        logging.error(f"Could not write state files: {e}")
         
         # --- STEP 2: Detect interview shortlists directly from email tables ---
         try:

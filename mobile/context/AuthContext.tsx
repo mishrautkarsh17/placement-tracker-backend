@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 export type User = {
   name: string;
@@ -27,7 +28,23 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     try {
       const storedUser = await AsyncStorage.getItem('user');
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+        
+        if (hasHardware && isEnrolled) {
+          const authResult = await LocalAuthentication.authenticateAsync({
+            promptMessage: 'Unlock PlaceTrack',
+            fallbackLabel: 'Use Passcode',
+          });
+          
+          if (authResult.success) {
+            setUser(JSON.parse(storedUser));
+          } else {
+            // Cancelled or failed. We leave user=null so they stay on LoginScreen.
+          }
+        } else {
+          setUser(JSON.parse(storedUser));
+        }
       }
     } catch (e) {
       console.error(e);

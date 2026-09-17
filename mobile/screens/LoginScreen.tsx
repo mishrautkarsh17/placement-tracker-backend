@@ -1,35 +1,54 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Dimensions, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-import * as AuthSession from 'expo-auth-session';
+import { GoogleSignin, isErrorWithCode, statusCodes } from '@react-native-google-signin/google-signin';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { C, F, R, S, card, softShadow } from '../components/theme';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
-WebBrowser.maybeCompleteAuthSession();
-
 export default function LoginScreen() {
   const { login } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: '818439802211-h71rgar9kb1u33g46o3jmtq715nkr90u.apps.googleusercontent.com',
-    scopes: ['profile', 'email'],
-    redirectUri: AuthSession.makeRedirectUri({ useProxy: true }),
-  });
 
   useEffect(() => {
-    if (response?.type === 'success' && response.authentication) {
+    GoogleSignin.configure({
+      webClientId: '818439802211-h71rgar9kb1u33g46o3jmtq715nkr90u.apps.googleusercontent.com',
+      scopes: ['profile', 'email'],
+    });
+  }, []);
+
+  const handleSignIn = async () => {
+    try {
       setLoading(true);
-      login(response.authentication.accessToken).catch(e => {
-        Alert.alert('Error', e.message || 'Failed'); setLoading(false);
-      });
-    } else if (response?.type === 'error') {
-      Alert.alert('Login Failed', response.error?.message || 'Auth error'); setLoading(false);
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const tokens = await GoogleSignin.getTokens();
+      
+      if (tokens.accessToken) {
+        await login(tokens.accessToken);
+      } else {
+        throw new Error("No access token returned");
+      }
+    } catch (error: any) {
+      console.log(error);
+      if (isErrorWithCode(error)) {
+        if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+          // user cancelled the login flow
+        } else if (error.code === statusCodes.IN_PROGRESS) {
+          // operation (e.g. sign in) is in progress already
+        } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+          Alert.alert('Play services not available or outdated');
+        } else {
+          Alert.alert('Login Failed', error.message || 'Auth error');
+        }
+      } else {
+        Alert.alert('Login Failed', error.message || 'Auth error');
+      }
+    } finally {
+      setLoading(false);
     }
-  }, [response]);
+  };
 
   return (
     <SafeAreaView style={s.root}>
@@ -76,9 +95,9 @@ export default function LoginScreen() {
       {/* ── CTA ── */}
       <Animated.View entering={FadeInUp.duration(600).delay(400)} style={s.footer}>
         <TouchableOpacity
-          style={[s.btn, (!request || loading) && { opacity: 0.6 }]}
-          onPress={() => { setLoading(true); promptAsync({ useProxy: true }); }}
-          disabled={!request || loading}
+          style={[s.btn, loading && { opacity: 0.6 }]}
+          onPress={handleSignIn}
+          disabled={loading}
           activeOpacity={0.8}
         >
           {loading ? <ActivityIndicator color={C.bg} /> : (
@@ -99,7 +118,7 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg, paddingHorizontal: S.xl },
   
   header: { alignItems: 'center', marginTop: S.xl * 2, marginBottom: S.xl },
-  logoImg: { width: 90, height: 90, marginBottom: S.lg },
+  logoImg: { width: 60, height: 60, marginBottom: S.lg },
   logoBox: {
     width: 60, height: 60, borderRadius: R.lg,
     backgroundColor: C.s1, alignItems: 'center', justifyContent: 'center',

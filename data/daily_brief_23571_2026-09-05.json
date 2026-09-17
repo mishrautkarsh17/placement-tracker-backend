@@ -1,0 +1,47 @@
+{
+  "next_action": {
+    "company": "PRISM",
+    "title": "Full process Pen paper Test + Interview",
+    "time_location": "8:00 AM \u2022 C01 (Old Academic Building)",
+    "countdown": "1 Day left",
+    "tag": "TOMORROW"
+  },
+  "progress": {
+    "completed": 0,
+    "total": 5,
+    "percentage": 0,
+    "checklist": [
+      {
+        "task": "Practice dry-running Backtracking and Recursion trees on paper because PRISM conducts a manual pen-paper round",
+        "done": false
+      },
+      {
+        "task": "Write clean C++/Java code for Linked List reversal on paper to prevent syntax errors without IDE assistance",
+        "done": false
+      },
+      {
+        "task": "Revise OS Paging, Segmentations, and Deadlock Prevention because systems fundamentals are heavily tested in PRISM's written test",
+        "done": false
+      },
+      {
+        "task": "Practice SQL queries involving Group By, Having, and Left/Right Joins on paper as database schema questions are standard in manual tests",
+        "done": false
+      },
+      {
+        "task": "Review Polymorphism, Inheritance, and Encapsulation implementations in C++ to handle immediate conceptual questions in the interview stage",
+        "done": false
+      }
+    ]
+  },
+  "study_plan": {
+    "focus": "Paper-based Code Execution & Core Systems Fundamentals",
+    "recommended_time": "4h 30m of focused study",
+    "next_topic": "Dry-running Recursion & Pointer Manipulation"
+  },
+  "things_to_carry": [
+    "IIITD Student ID Card",
+    "Blue and Black Ballpoint Pens",
+    "Printed Copies of Resume",
+    "Writing Exam Pad"
+  ]
+}
