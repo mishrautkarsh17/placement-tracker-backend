@@ -46,6 +46,9 @@ def generate_content_with_fallback(prompt: str, config: types.GenerateContentCon
     if not keys:
         raise ValueError("No GEMINI_API_KEY found in environment or secrets.")
 
+    if config is None:
+        config = types.GenerateContentConfig()
+
     max_attempts = len(keys) * 3  # Give each key up to 3 full cycles
 
     for attempt in range(max_attempts):
@@ -70,11 +73,8 @@ def generate_content_with_fallback(prompt: str, config: types.GenerateContentCon
 
         try:
             client = genai.Client(api_key=available_key, vertexai=False)
-            response = client.models.generate_content(
-                model=model,
-                contents=prompt,
-                config=config
-            )
+            chat = client.chats.create(model=model, config=config)
+            response = chat.send_message(prompt)
             return response
 
         except Exception as e:

@@ -35,10 +35,8 @@ def generate_copilot_response(user_message: str, context_data: dict) -> str:
         
         if FRONTEND_GEMINI_API_KEY:
             client = genai.Client(api_key=FRONTEND_GEMINI_API_KEY, vertexai=False)
-            response = client.models.generate_content(
-                model='gemini-3.5-flash',
-                contents=full_prompt
-            )
+            chat = client.chats.create(model='gemini-3.5-flash')
+            response = chat.send_message(full_prompt)
         else:
             response = generate_content_with_fallback(
                 prompt=full_prompt
@@ -89,10 +87,8 @@ ACTIVE COMPANIES ON CAMPUS:
 """
         if FRONTEND_GEMINI_API_KEY:
             client = genai.Client(api_key=FRONTEND_GEMINI_API_KEY, vertexai=False)
-            response = client.models.generate_content(
-                model='gemini-3.5-flash',
-                contents=prompt
-            )
+            chat = client.chats.create(model='gemini-3.5-flash')
+            response = chat.send_message(prompt)
         else:
             response = generate_content_with_fallback(prompt=prompt)
             
